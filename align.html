@@ -858,7 +858,7 @@ async function initPiSDK() {
 
 function isPiBrowser() {
   return navigator.userAgent.includes('PiBrowser') ||
-    typeof window.Pi !== 'undefined';
+    navigator.userAgent.includes('Pi Network');
 }
 
 async function piLogin() {
@@ -877,7 +877,7 @@ async function piLogin() {
   }
   try {
     const btn = document.getElementById('pi-btn');
-    if (btn) btn.textContent = '⏳ Authenticating...';
+    if (btn) btn.innerHTML = '⏳ Authenticating...';
 
     const auth = await Pi.authenticate(['username'], onIncompletePayment);
     
