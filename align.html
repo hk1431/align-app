@@ -80,8 +80,9 @@ select.f-inp option{background:var(--bg2)}textarea.f-inp{resize:vertical;min-hei
 
 /* MAIN */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;min-height:0}
-#trial-banner{display:none;background:linear-gradient(90deg,#f59e0b,#f97316);padding:9px 20px;align-items:center;justify-content:center;gap:12px;font-size:0.78rem;font-weight:700;color:#000;flex-shrink:0}
-.tb-btn{background:rgba(0,0,0,0.15);border:none;border-radius:8px;color:#000;padding:4px 12px;cursor:pointer;font-size:0.72rem;font-weight:800;font-family:'Plus Jakarta Sans',sans-serif}
+#trial-banner{display:none;background:rgba(139,92,246,0.12);border-bottom:1px solid rgba(139,92,246,0.25);padding:9px 20px;align-items:center;justify-content:center;gap:12px;font-size:0.78rem;font-weight:600;color:var(--purple3);flex-shrink:0;backdrop-filter:blur(10px)}
+.tb-btn{background:var(--purple);border:none;border-radius:8px;color:#fff;padding:5px 14px;cursor:pointer;font-size:0.72rem;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;transition:opacity 0.2s}
+.tb-btn:hover{opacity:0.88}
 .top-bar{height:var(--header);flex-shrink:0;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 22px;background:var(--card)}
 .tb-left h2{font-size:1.05rem;font-weight:800;letter-spacing:-0.02em}
 .tb-left p{font-size:0.72rem;color:var(--text3);font-weight:600;margin-top:1px}
@@ -307,7 +308,7 @@ select.f-inp option{background:var(--bg2)}textarea.f-inp{resize:vertical;min-hei
 
     <div class="main">
       <div id="trial-banner">
-        <span id="tb-txt">⏳ 7 days trial remaining</span>
+        <span id="tb-txt">✨ 7 days left in your free trial</span>
         <button class="tb-btn" onclick="showPayWall()">Upgrade Now →</button>
       </div>
 
@@ -637,13 +638,13 @@ async function checkSub(){
     if(!sub){
       await db.from('subscriptions').insert({user_id:U.id});
       document.getElementById('trial-banner').style.display='flex';
-      document.getElementById('tb-txt').textContent='⏳ 7 din trial baki';return;
+      document.getElementById('tb-txt').textContent='⏳ 7 days free trial remaining';return;
     }
     if(sub.status==='paid'&&sub.paid_until&&new Date(sub.paid_until)>new Date()){
       document.getElementById('sb-plan').textContent='⭐ '+(sub.plan||'Pro');return;
     }
     const days=Math.ceil((new Date(sub.trial_end)-new Date())/(864e5));
-    if(days>0){document.getElementById('trial-banner').style.display='flex';document.getElementById('tb-txt').textContent=`⏳ ${days} din trial baki`;}
+    if(days>0){document.getElementById('trial-banner').style.display='flex';document.getElementById('tb-txt').textContent=`✨ ${days} days left in your free trial`;}
     else showPayWall();
   }catch(e){console.log('checkSub:',e);}
 }
