@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>✨ ALIGN — Live in Flow</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080818;--bg2:#0e0e22;--bg3:#141430;
+  --card:#12122a;--card2:#1a1a38;--glass:rgba(255,255,255,0.03);
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --purple:#8b5cf6;--purple2:#7c3aed;--purple3:#a78bfa;--purple4:rgba(139,92,246,0.12);
+  --green:#10b981;--green2:#059669;--green4:rgba(16,185,129,0.12);
+  --red:#f43f5e;--red4:rgba(244,63,94,0.12);
+  --gold:#f59e0b;--gold4:rgba(245,158,11,0.12);
+  --blue:#38bdf8;--blue4:rgba(56,189,248,0.12);
+  --pink:#ec4899;
+  --text:#f1f5f9;--text2:#94a3b8;--text3:#475569;
+  --sidebar:220px;--header:64px;
+  --r:12px;--r2:18px;--r3:24px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;font-size:15px}
+body{background:var(--bg);color:var(--text);line-height:1.5}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 80% 60% at 10% 0%,rgba(139,92,246,0.07) 0%,transparent 60%),
+  radial-gradient(ellipse 60% 40% at 90% 100%,rgba(56,189,248,0.04) 0%,transparent 60%)}
+
+/* AUTH */
+#auth-screen{display:flex;align-items:center;justify-content:center;height:100vh;padding:20px;position:relative;z-index:10}
+.auth-wrap{width:100%;max-width:400px}
+.auth-logo{font-size:2.4rem;font-weight:800;text-align:center;margin-bottom:4px;letter-spacing:-0.03em;background:linear-gradient(135deg,#a78bfa,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.auth-tagline{text-align:center;color:var(--text3);font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:32px;font-weight:700}
+.auth-card{background:var(--card);border:1px solid var(--border2);border-radius:var(--r3);padding:32px;box-shadow:0 32px 64px rgba(0,0,0,0.5)}
+.f-lbl{font-size:0.72rem;font-weight:700;color:var(--text3);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px}
+.f-inp{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:13px 16px;color:var(--text);font-size:0.9rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none;transition:border-color 0.2s;margin-bottom:14px}
+.f-inp:focus{border-color:var(--purple)}.f-inp::placeholder{color:var(--text3)}
+select.f-inp option{background:var(--bg2)}textarea.f-inp{resize:vertical;min-height:80px}
+.btn-primary{width:100%;background:linear-gradient(135deg,var(--purple),var(--purple2));border:none;border-radius:var(--r);padding:14px;color:#fff;font-size:0.9rem;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;cursor:pointer;transition:opacity 0.2s;letter-spacing:0.02em;margin-bottom:10px}
+.btn-primary:hover{opacity:0.88}.btn-primary:active{transform:scale(0.98)}
+.btn-bio{width:100%;background:var(--green4);border:1px solid rgba(16,185,129,0.3);border-radius:var(--r);padding:12px;color:var(--green);font-size:0.875rem;font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px}
+.btn-ghost{width:100%;background:transparent;border:none;color:var(--text3);font-size:0.82rem;cursor:pointer;padding:8px;font-family:'Plus Jakarta Sans',sans-serif;transition:color 0.2s}
+.btn-ghost:hover{color:var(--text2)}
+#auth-err{color:var(--red);font-size:0.8rem;text-align:center;margin-top:6px;display:none}
+
+/* LOCK */
+#lock-screen{display:none;align-items:center;justify-content:center;height:100vh;position:relative;z-index:10}
+.lock-box{text-align:center;padding:48px 36px;background:var(--card);border:1px solid var(--border2);border-radius:var(--r3);max-width:360px;width:90%}
+.lock-box h2{font-size:1.5rem;font-weight:800;letter-spacing:-0.02em;margin:12px 0 6px}
+.lock-box p{color:var(--text2);font-size:0.875rem;margin-bottom:24px}
+
+/* LAYOUT */
+#app{display:none;height:100vh;position:relative;z-index:1}
+.app-wrap{display:flex;height:100vh}
+
+/* SIDEBAR */
+#sidebar{width:var(--sidebar);flex-shrink:0;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sb-top{padding:18px 16px;border-bottom:1px solid var(--border)}
+.sb-logo{font-size:1.25rem;font-weight:800;letter-spacing:-0.03em;background:linear-gradient(135deg,#a78bfa,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sb-tagline{font-size:0.62rem;color:var(--text3);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-top:2px}
+.sb-user{padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.sb-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--purple),var(--purple2));display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;color:#fff;flex-shrink:0}
+.sb-info{min-width:0}
+.sb-name{font-size:0.8rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-plan{font-size:0.62rem;color:var(--green);font-weight:700;letter-spacing:0.05em}
+.sb-nav{flex:1;overflow-y:auto;padding:8px}
+.sb-sec{font-size:0.6rem;font-weight:700;color:var(--text3);letter-spacing:0.12em;text-transform:uppercase;padding:10px 8px 4px}
+.nav-btn{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;cursor:pointer;transition:all 0.15s;margin-bottom:1px;color:var(--text2);font-size:0.82rem;font-weight:500;border:none;background:transparent;width:100%;text-align:left}
+.nav-btn:hover{background:var(--glass);color:var(--text)}
+.nav-btn.active{background:var(--purple4);color:var(--purple3);font-weight:700}
+.nav-ic{font-size:0.95rem;width:18px;text-align:center;flex-shrink:0}
+.sb-foot{padding:10px 8px;border-top:1px solid var(--border)}
+.btn-out{display:flex;align-items:center;gap:8px;width:100%;background:transparent;border:1px solid var(--border);border-radius:9px;color:var(--text3);font-size:0.8rem;font-family:'Plus Jakarta Sans',sans-serif;font-weight:500;padding:9px 12px;cursor:pointer;transition:all 0.2s}
+.btn-out:hover{border-color:var(--red);color:var(--red);background:var(--red4)}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+#trial-banner{display:none;background:linear-gradient(90deg,#f59e0b,#f97316);padding:9px 20px;align-items:center;justify-content:center;gap:12px;font-size:0.78rem;font-weight:700;color:#000;flex-shrink:0}
+.tb-btn{background:rgba(0,0,0,0.15);border:none;border-radius:8px;color:#000;padding:4px 12px;cursor:pointer;font-size:0.72rem;font-weight:800;font-family:'Plus Jakarta Sans',sans-serif}
+.top-bar{height:var(--header);flex-shrink:0;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 22px;background:var(--card)}
+.tb-left h2{font-size:1.05rem;font-weight:800;letter-spacing:-0.02em}
+.tb-left p{font-size:0.72rem;color:var(--text3);font-weight:600;margin-top:1px}
+.btn-green{display:flex;align-items:center;gap:6px;background:var(--green);border:none;border-radius:10px;color:#fff;font-size:0.8rem;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;padding:9px 16px;cursor:pointer;transition:all 0.2s;white-space:nowrap}
+.btn-green:hover{background:var(--green2);transform:translateY(-1px)}.btn-green:active{transform:scale(0.97)}
+.scroll-area{flex:1;overflow-y:auto;padding:18px 22px}
+.tab-pane{display:none;animation:fu 0.2s ease}.tab-pane.active{display:block}
+@keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:18px}
+.sc{background:var(--card2);border:1px solid var(--border);border-radius:var(--r2);padding:16px;position:relative;overflow:hidden}
+.sc::after{content:'';position:absolute;bottom:-15px;right:-15px;width:60px;height:60px;border-radius:50%;opacity:0.18;filter:blur(14px)}
+.sc.p::after{background:var(--purple)}.sc.g::after{background:var(--green)}.sc.o::after{background:var(--gold)}.sc.b::after{background:var(--blue)}.sc.r::after{background:var(--red)}
+.sc-icon{font-size:1.2rem;margin-bottom:8px}.sc-num{font-size:1.6rem;font-weight:800;letter-spacing:-0.03em;line-height:1}
+.sc-lbl{font-size:0.68rem;color:var(--text3);font-weight:700;letter-spacing:0.05em;text-transform:uppercase;margin-top:3px}
+
+/* CARDS */
+.card{background:var(--card2);border:1px solid var(--border);border-radius:var(--r2);padding:18px;margin-bottom:14px}
+.card-hd{font-size:0.72rem;font-weight:700;color:var(--text3);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:12px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* FORM SHEET */
+.form-sheet{display:none;background:var(--card);border:1px solid var(--border2);border-radius:var(--r3);padding:20px;margin-bottom:16px;animation:fu 0.2s ease}
+.form-sheet.open{display:block}
+.sheet-hd{font-size:0.95rem;font-weight:800;margin-bottom:14px;letter-spacing:-0.01em}
+.form-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.fc{flex:1;min-width:120px}
+.fc-lbl{font-size:0.68rem;font-weight:700;color:var(--text3);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:5px}
+.form-acts{display:flex;gap:8px;margin-top:6px}
+.btn-save{background:var(--green);border:none;border-radius:var(--r);color:#fff;font-size:0.82rem;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;padding:10px 20px;cursor:pointer;transition:background 0.2s}
+.btn-save:hover{background:var(--green2)}
+.btn-cl{background:transparent;border:1px solid var(--border);border-radius:var(--r);color:var(--text2);font-size:0.82rem;font-family:'Plus Jakarta Sans',sans-serif;padding:10px 16px;cursor:pointer;transition:all 0.2s}
+.btn-cl:hover{border-color:var(--border2)}
+
+/* LIST ITEMS */
+.li{display:flex;align-items:center;gap:11px;padding:13px 15px;background:var(--card);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:7px;transition:border-color 0.15s}
+.li:hover{border-color:var(--border2)}
+.li-ic{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.li-body{flex:1;min-width:0}
+.li-ttl{font-weight:600;font-size:0.875rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li-sub{font-size:0.72rem;color:var(--text3);margin-top:1px}
+.btn-del{background:transparent;border:none;color:var(--text3);cursor:pointer;padding:6px;border-radius:7px;font-size:0.875rem;transition:all 0.15s;line-height:1;flex-shrink:0}
+.btn-del:hover{color:var(--red);background:var(--red4)}
+.chk{width:22px;height:22px;border-radius:7px;border:2px solid var(--border2);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;font-size:0.7rem;font-weight:bold;color:#fff}
+.chk.on{background:var(--green);border-color:var(--green)}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:0.65rem;font-weight:800;letter-spacing:0.04em;white-space:nowrap}
+.b-r{background:var(--red4);color:var(--red)}.b-g{background:var(--green4);color:var(--green)}
+.b-o{background:var(--gold4);color:var(--gold)}.b-b{background:var(--blue4);color:var(--blue)}
+.b-p{background:var(--purple4);color:var(--purple3)}.b-gray{background:rgba(71,85,105,0.2);color:var(--text3)}
+
+/* PROGRESS */
+.prog{background:var(--bg3);border-radius:20px;height:5px;overflow:hidden;margin-top:7px}
+.prog-f{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--purple),var(--blue));transition:width 0.5s}
+.prog-f.gn{background:linear-gradient(90deg,var(--green),var(--blue))}
+
+/* AFFIRMATION */
+.aff{background:linear-gradient(135deg,rgba(139,92,246,0.08),rgba(56,189,248,0.04));border:1px solid rgba(139,92,246,0.15);border-radius:var(--r2);padding:16px;font-size:0.9rem;line-height:1.7;font-style:italic;color:var(--text);text-align:center}
+
+/* MOOD */
+.mood-sl{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:3px;background:linear-gradient(90deg,var(--red),var(--gold),var(--green));outline:none;margin:14px 0}
+.mood-sl::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;cursor:pointer;border:3px solid var(--purple);box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+.mood-big{font-size:3.5rem;text-align:center;line-height:1;margin:6px 0}
+.mood-lbl{text-align:center;font-size:0.8rem;color:var(--text2);font-weight:600}
+
+/* HABITS */
+.habit-row{display:flex;align-items:center;gap:11px;padding:13px 15px;background:var(--card);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:7px}
+.hbt{width:38px;height:38px;border-radius:10px;border:2px solid var(--border2);background:transparent;cursor:pointer;font-size:1.2rem;transition:all 0.2s;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.hbt.on{background:var(--green4);border-color:var(--green)}
+
+/* VAULT */
+.vault-item{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:15px;margin-bottom:8px}
+.v-head{display:flex;align-items:center;margin-bottom:9px}
+.v-icon{background:var(--purple4);padding:5px 8px;border-radius:8px;font-size:0.9rem;margin-right:8px}
+.v-platform{font-weight:700;font-size:0.9rem;flex:1}
+.v-row{display:flex;gap:6px;margin-bottom:3px}
+.v-key{font-size:0.68rem;font-weight:700;color:var(--text3);width:76px;letter-spacing:0.05em;text-transform:uppercase;flex-shrink:0;padding-top:1px}
+.v-val{font-size:0.8rem;color:var(--text2)}
+
+/* UPDATE ROW */
+.upd-row{display:flex;gap:8px;margin-top:10px}
+.upd-inp{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:9px 12px;color:var(--text);font-size:0.8rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none}
+.upd-inp:focus{border-color:var(--green)}
+.upd-btn{background:var(--green4);border:1px solid rgba(16,185,129,0.3);border-radius:var(--r);color:var(--green);font-size:0.76rem;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;padding:9px 12px;cursor:pointer;white-space:nowrap}
+
+/* TOAST */
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--card2);border:1px solid var(--border2);border-radius:12px;padding:11px 20px;font-size:0.82rem;font-weight:600;z-index:9999;opacity:0;transition:all 0.25s;pointer-events:none;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.success{border-color:rgba(16,185,129,0.4);color:var(--green)}
+#toast.error{border-color:rgba(244,63,94,0.4);color:var(--red)}
+
+/* PAYMENT WALL */
+#pay-wall{display:none;position:fixed;inset:0;background:rgba(8,8,24,0.97);z-index:500;align-items:center;justify-content:center;padding:20px}
+.pw{background:var(--card);border:1px solid var(--border2);border-radius:var(--r3);padding:36px;max-width:440px;width:100%;text-align:center;box-shadow:0 0 80px rgba(139,92,246,0.15)}
+.pw h2{font-size:1.7rem;font-weight:800;letter-spacing:-0.03em;margin:12px 0 8px}
+.pw p{color:var(--text2);font-size:0.875rem;line-height:1.7;margin-bottom:22px}
+.plan-g{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+.plan{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:18px;position:relative}
+.plan.feat{border-color:var(--purple)}
+.plan-tag{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--purple),var(--purple2));border-radius:20px;padding:3px 12px;font-size:0.62rem;font-weight:800;color:#fff;white-space:nowrap;letter-spacing:0.05em}
+.plan-nm{font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.plan-pr{font-size:2rem;font-weight:800;letter-spacing:-0.03em;line-height:1}
+.plan-pd{font-size:0.72rem;color:var(--text3);margin-bottom:12px}
+.btn-plan{width:100%;background:linear-gradient(135deg,var(--purple),var(--purple2));border:none;border-radius:var(--r);color:#fff;padding:9px;font-size:0.8rem;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;cursor:pointer;transition:opacity 0.2s}
+.btn-plan:hover{opacity:0.88}
+
+/* BOTTOM NAV */
+#bnav{display:none;background:var(--card);border-top:1px solid var(--border);flex-shrink:0}
+.bnav-inner{display:flex;overflow-x:auto;padding:4px}
+.bnav-inner::-webkit-scrollbar{display:none}
+.bb{display:flex;flex-direction:column;align-items:center;gap:2px;background:transparent;border:none;color:var(--text3);font-size:0.56rem;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;padding:7px 11px;border-radius:9px;cursor:pointer;transition:all 0.15s;white-space:nowrap;flex-shrink:0;letter-spacing:0.03em}
+.bb-ic{font-size:1.1rem;line-height:1}
+.bb.active{color:var(--purple3);background:var(--purple4)}
+
+/* NOTE MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.overlay.open{display:flex}
+.modal-box{background:var(--card);border:1px solid var(--border2);border-radius:var(--r3);padding:26px;width:100%;max-width:560px;max-height:80vh;overflow-y:auto}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  #sidebar{display:none}
+  #bnav{display:flex;flex-direction:column}
+  .main{display:flex;flex-direction:column}
+  .scroll-area{padding:14px}
+  .g2{grid-template-columns:1fr}
+  .top-bar{padding:0 14px}
+  .top-bar h2{font-size:0.95rem}
+  #trial-banner{left:0;font-size:0.72rem}
+  .plan-g{grid-template-columns:1fr}
+}
+@media(max-width:380px){.stats{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-wrap">
+    <div class="auth-logo">✨ ALIGN</div>
+    <div class="auth-tagline">Live in Flow</div>
+    <div class="auth-card">
+      <div id="login-view">
+        <div class="f-lbl">Email Address</div>
+        <input class="f-inp" type="email" id="email" placeholder="you@example.com" autocomplete="email">
+        <div class="f-lbl">Password</div>
+        <input class="f-inp" type="password" id="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
+        <button class="btn-primary" onclick="login()">Sign In →</button>
+        <button class="btn-bio" id="bio-btn" onclick="biometricLogin()" style="display:none">👆 Use Fingerprint / Face ID</button>
+        <button class="btn-ghost" onclick="showReg()">New here? Create free account</button>
+      </div>
+      <div id="reg-view" style="display:none">
+        <div class="f-lbl">Email Address</div>
+        <input class="f-inp" type="email" id="reg-email" placeholder="you@example.com">
+        <div class="f-lbl">Password</div>
+        <input class="f-inp" type="password" id="reg-pass" placeholder="Minimum 6 characters">
+        <button class="btn-primary" onclick="register()">Create Account →</button>
+        <button class="btn-ghost" onclick="showLogin()">← Back to Sign In</button>
+      </div>
+      <div id="auth-err"></div>
+    </div>
+  </div>
+</div>
+
+<!-- LOCK -->
+<div id="lock-screen">
+  <div class="lock-box">
+    <div style="font-size:3rem">🔐</div>
+    <h2>Welcome Back!</h2>
+    <p>Unlock ALIGN to continue your flow</p>
+    <button class="btn-bio" onclick="biometricLogin()" style="margin-bottom:12px">👆 Fingerprint / Face ID</button>
+    <button class="btn-ghost" onclick="backToPass()">Use password instead</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="app-wrap">
+    <nav id="sidebar">
+      <div class="sb-top">
+        <div class="sb-logo">✨ ALIGN</div>
+        <div class="sb-tagline">Live in Flow</div>
+      </div>
+      <div class="sb-user">
+        <div class="sb-av" id="sb-av">D</div>
+        <div class="sb-info">
+          <div class="sb-name" id="sb-name">Loading...</div>
+          <div class="sb-plan" id="sb-plan">✨ Free Trial</div>
+        </div>
+      </div>
+      <div class="sb-nav">
+        <div class="sb-sec">Overview</div>
+        <button class="nav-btn active" onclick="go('dashboard')" data-tab="dashboard"><span class="nav-ic">🎯</span>Dashboard</button>
+        <div class="sb-sec">Manage</div>
+        <button class="nav-btn" onclick="go('todos')" data-tab="todos"><span class="nav-ic">✅</span>To-Do List</button>
+        <button class="nav-btn" onclick="go('expenses')" data-tab="expenses"><span class="nav-ic">💸</span>Expenses</button>
+        <button class="nav-btn" onclick="go('vault')" data-tab="vault"><span class="nav-ic">🔐</span>Password Vault</button>
+        <div class="sb-sec">Wealth</div>
+        <button class="nav-btn" onclick="go('savings')" data-tab="savings"><span class="nav-ic">💰</span>Savings</button>
+        <button class="nav-btn" onclick="go('progress')" data-tab="progress"><span class="nav-ic">📈</span>Goals</button>
+        <div class="sb-sec">Growth</div>
+        <button class="nav-btn" onclick="go('projects')" data-tab="projects"><span class="nav-ic">🚀</span>Projects</button>
+        <button class="nav-btn" onclick="go('notes')" data-tab="notes"><span class="nav-ic">📓</span>Notes</button>
+        <button class="nav-btn" onclick="go('habits')" data-tab="habits"><span class="nav-ic">🌿</span>Habits</button>
+        <button class="nav-btn" onclick="go('mood')" data-tab="mood"><span class="nav-ic">🔥</span>Mood</button>
+      </div>
+      <div class="sb-foot">
+        <button class="btn-out" onclick="logout()">🚪 Sign Out</button>
+      </div>
+    </nav>
+
+    <div class="main">
+      <div id="trial-banner">
+        <span id="tb-txt">⏳ 7 days trial remaining</span>
+        <button class="tb-btn" onclick="showPayWall()">Upgrade Now →</button>
+      </div>
+
+      <div class="top-bar">
+        <div class="tb-left">
+          <h2 id="hdr-title">Dashboard</h2>
+          <p id="hdr-sub">Your personal command center</p>
+        </div>
+        <button class="btn-green" id="add-btn" onclick="triggerAdd()" style="display:none">＋ Add New</button>
+      </div>
+
+      <div class="scroll-area">
+
+        <!-- DASHBOARD -->
+        <div class="tab-pane active" id="pane-dashboard">
+          <div class="stats">
+            <div class="sc p"><div class="sc-icon">✅</div><div class="sc-num" id="s-td">–</div><div class="sc-lbl">Pending Tasks</div></div>
+            <div class="sc g"><div class="sc-icon">💸</div><div class="sc-num" id="s-sp">–</div><div class="sc-lbl">Today's Spend</div></div>
+            <div class="sc o"><div class="sc-icon">🌿</div><div class="sc-num" id="s-hb">–</div><div class="sc-lbl">Habits Done</div></div>
+            <div class="sc b"><div class="sc-icon">🚀</div><div class="sc-num" id="s-pr">–</div><div class="sc-lbl">Active Projects</div></div>
+          </div>
+          <div class="g2">
+            <div class="card">
+              <div class="card-hd">✨ Today's Affirmation</div>
+              <div class="aff" id="d-aff">Loading...</div>
+              <button onclick="newAff()" style="width:100%;background:transparent;border:none;color:var(--text3);font-size:0.75rem;cursor:pointer;padding:10px 0 0;font-family:'Plus Jakarta Sans',sans-serif">🔄 New Affirmation</button>
+            </div>
+            <div class="card">
+              <div class="card-hd">🚀 Projects Overview</div>
+              <div id="d-projs">Loading...</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-hd">✅ Pending Tasks</div>
+            <div id="d-todos">Loading...</div>
+          </div>
+        </div>
+
+        <!-- TODOS -->
+        <div class="tab-pane" id="pane-todos">
+          <div class="form-sheet" id="form-todos">
+            <div class="sheet-hd">✅ Add New Task</div>
+            <div class="form-row">
+              <div class="fc" style="flex:2"><div class="fc-lbl">Task Title *</div><input class="f-inp" id="t-title" placeholder="What needs to be done?"></div>
+              <div class="fc"><div class="fc-lbl">Priority</div><select class="f-inp" id="t-pri"><option value="high">🔴 High</option><option value="medium" selected>🟡 Medium</option><option value="low">🟢 Low</option></select></div>
+            </div>
+            <div class="form-row">
+              <div class="fc"><div class="fc-lbl">Description</div><input class="f-inp" id="t-desc" placeholder="Optional details..."></div>
+              <div class="fc"><div class="fc-lbl">Due Date</div><input class="f-inp" type="date" id="t-due"></div>
+            </div>
+            <div class="form-acts"><button class="btn-save" onclick="addTodo()">Save Task</button><button class="btn-cl" onclick="closeForm('form-todos')">Cancel</button></div>
+          </div>
+          <div style="margin-bottom:12px">
+            <select class="f-inp" id="todo-f" onchange="loadTodos()" style="max-width:160px;padding:9px 12px;font-size:0.82rem">
+              <option value="all">All Tasks</option><option value="pending">Pending</option><option value="done">Completed</option>
+            </select>
+          </div>
+          <div id="list-todos"></div>
+        </div>
+
+        <!-- EXPENSES -->
+        <div class="tab-pane" id="pane-expenses">
+          <div class="stats" style="margin-bottom:14px">
+            <div class="sc r"><div class="sc-icon">📅</div><div class="sc-num" id="e-td">₹0</div><div class="sc-lbl">Today</div></div>
+            <div class="sc p"><div class="sc-icon">📆</div><div class="sc-num" id="e-mo">₹0</div><div class="sc-lbl">This Month</div></div>
+          </div>
+          <div class="form-sheet" id="form-expenses">
+            <div class="sheet-hd">💸 Add Expense</div>
+            <div class="form-row">
+              <div class="fc"><div class="fc-lbl">Amount (₹) *</div><input class="f-inp" type="number" id="e-amt" placeholder="0"></div>
+              <div class="fc"><div class="fc-lbl">Category</div><select class="f-inp" id="e-cat"><option>🍔 Food</option><option>🚗 Travel</option><option>🛍 Shopping</option><option>💊 Health</option><option>💼 Business</option><option>🎬 Entertainment</option><option>📈 Investment</option><option>📦 Other</option></select></div>
+            </div>
+            <div class="form-row">
+              <div class="fc"><div class="fc-lbl">Description</div><input class="f-inp" id="e-desc" placeholder="What did you buy?"></div>
+              <div class="fc"><div class="fc-lbl">Date</div><input class="f-inp" type="date" id="e-date"></div>
+            </div>
+            <div class="form-acts"><button class="btn-save" onclick="addExpense()">Save Expense</button><button class="btn-cl" onclick="closeForm('form-expenses')">Cancel</button></div>
+          </div>
+          <div id="list-expenses"></div>
+        </div>
+
+        <!-- VAULT -->
+        <div class="tab-pane" id="pane-vault">
+          <div class="form-sheet" id="form-vault">
+            <div class="sheet-hd">🔐 Add Password Entry</div>
+            <div class="form-row">
+              <div class="fc"><div class="fc-lbl">Platform *</div><input class="f-inp" id="v-pl" placeholder="Gmail, Instagram..."></div>
+              <div class="fc"><div class="fc-lbl">Username Hint</div><input class="f-inp" id="v-us" placeholder="deep****@gmail"></div>
+            </div>
+            <div class="form-row">
+              <div class="fc"><div class="fc-lbl">Password Hint</div><input class="f-inp" id="v-pw" placeholder="Starts with Deep..."></div>
+              <div class="fc"><div class="fc-lbl">Notes</div><input class="f-inp" id="v-nt" placeholder="Extra info"></div>
+            </div>
+            <div class="form-acts"><button class="btn-save" onclick="addVault()">Save Entry</button><button class="btn-cl" onclick="closeForm('form-vault')">Cancel</button></div>
+          </div>
+          <input class="f-inp" id="v-search" placeholder="🔍 Search platforms..." style="margin-bottom:12px" oninput="loadVault()">
+          <div id="list-vault"></div>
+        </div>
+
+        <!-- SAVINGS -->
+        <div class="tab-pane" id="pane-savings">
+          <div class="form-sheet" id="form-savings">
+            <div class="sheet-hd">💰 Add Savings / Investment</div>
+            <div class="form-row">
+              <div class="fc" style="flex:2"><div class="fc-lbl">Name *</div><input class="f-inp" id="sv-n" placeholder="Emergency Fund, BTC..."></div>
+              <div class="fc"><div class="fc-lbl">Type</div><select class="f-inp" id="sv-t"><option value="savings">💵 Savings</option><option value="investment">📈 Investment</option><option value="crypto">₿ Crypto</option></select></div>
+            </div>
+            <div class="form-row">
+              <div class="fc"><div class="fc-lbl">Current (₹)</div><input class="f-inp" type="number" id="sv-c" placeholder="0"></div>
+              <div class="fc"><div class="fc-lbl">Target (₹)</div><input class="f-inp" type="number" id="sv-g" placeholder="0"></div>
+              <div class="fc"><div class="fc-lbl">Notes</div><input class="f-inp" id="sv-nt" placeholder="HDFC, Zerodha..."></div>
+            </div>
+            <div class="form-acts"><button class="btn-save" onclick="addSaving()">Save</button><button class="btn-cl" onclick="closeForm('form-savings')">Cancel</button></div>
+          </div>
+          <div id="list-savings"></div>
+        </div>
+
+        <!-- PROGRESS -->
+        <div class="tab-pane" id="pane-progress">
+          <div class="form-sheet" id="form-progress">
+            <div class="sheet-hd">📈 Add Goal</div>
+            <div class="form-row">
+              <div class="fc" style="flex:2"><div class="fc-lbl">Goal Title *</div><input class="f-inp" id="p-ti" placeholder="YouTube Subscribers..."></div>
+              <div class="fc"><div class="fc-lbl">Unit</div><input class="f-inp" id="p-un" placeholder="subs / ₹ / kg"></div>
+            </div>
+            <div class="form-row">
+              <div class="fc"><div class="fc-lbl">Current</div><input class="f-inp" type="number" id="p-cu" placeholder="0"></div>
+              <div class="fc"><div class="fc-lbl">Target</div><input class="f-inp" type="number" id="p-tg" placeholder="1000"></div>
+              <div class="fc"><div class="fc-lbl">Deadline</div><input class="f-inp" type="date" id="p-dl"></div>
+            </div>
+            <div class="form-acts"><button class="btn-save" onclick="addGoal()">Save Goal</button><button class="btn-cl" onclick="closeForm('form-progress')">Cancel</button></div>
+          </div>
+          <div id="list-progress"></div>
+        </div>
+
+        <!-- PROJECTS -->
+        <div class="tab-pane" id="pane-projects">
+          <div class="form-sheet" id="form-projects">
+            <div class="sheet-hd">🚀 Add Project</div>
+            <div class="form-row">
+              <div class="fc" style="flex:2"><div class="fc-lbl">Project Name *</div><input class="f-inp" id="pr-n" placeholder="GENIE, HIRA..."></div>
+              <div class="fc"><div class="fc-lbl">Status</div><select class="f-inp" id="pr-s"><option value="planned">📋 Planned</option><option value="in_progress">⚡ In Progress</option><option value="demo_ready">✅ Demo Ready</option><option value="complete">🏆 Complete</option><option value="paused">⏸ Paused</option></select></div>
+            </div>
+            <div class="form-row">
+              <div class="fc"><div class="fc-lbl">Description</div><input class="f-inp" id="pr-d" placeholder="What is this project?"></div>
+              <div class="fc"><div class="fc-lbl">Next Step</div><input class="f-inp" id="pr-nx" placeholder="What to do next?"></div>
+            </div>
+            <div class="form-acts"><button class="btn-save" onclick="addProject()">Save Project</button><button class="btn-cl" onclick="closeForm('form-projects')">Cancel</button></div>
+          </div>
+          <div id="list-projects"></div>
+        </div>
+
+        <!-- NOTES -->
+        <div class="tab-pane" id="pane-notes">
+          <div class="form-sheet" id="form-notes">
+            <div class="sheet-hd">📓 New Note</div>
+            <div class="form-row">
+              <div class="fc" style="flex:2"><div class="fc-lbl">Title *</div><input class="f-inp" id="n-ti" placeholder="Note title..."></div>
+              <div class="fc"><div class="fc-lbl">Tags</div><input class="f-inp" id="n-tg" placeholder="idea, business..."></div>
+            </div>
+            <div class="form-row"><div class="fc"><div class="fc-lbl">Content</div><textarea class="f-inp" id="n-co" placeholder="Write your thoughts..."></textarea></div></div>
+            <div class="form-acts"><button class="btn-save" onclick="addNote()">Save Note</button><button class="btn-cl" onclick="closeForm('form-notes')">Cancel</button></div>
+          </div>
+          <div id="list-notes"></div>
+        </div>
+
+        <!-- HABITS -->
+        <div class="tab-pane" id="pane-habits">
+          <div class="form-sheet" id="form-habits">
+            <div class="sheet-hd">🌿 Add Habit</div>
+            <div class="form-row">
+              <div class="fc" style="flex:2"><div class="fc-lbl">Habit Name *</div><input class="f-inp" id="h-n" placeholder="Meditation, Exercise..."></div>
+              <div class="fc"><div class="fc-lbl">Emoji</div><input class="f-inp" id="h-e" placeholder="🧘 🏃 💧" maxlength="4"></div>
+            </div>
+            <div class="form-acts"><button class="btn-save" onclick="addHabit()">Save Habit</button><button class="btn-cl" onclick="closeForm('form-habits')">Cancel</button></div>
+          </div>
+          <div id="h-date" style="font-size:0.7rem;color:var(--text3);font-weight:700;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:10px"></div>
+          <div id="list-habits"></div>
+        </div>
+
+        <!-- MOOD -->
+        <div class="tab-pane" id="pane-mood">
+          <div class="g2">
+            <div class="card">
+              <div class="card-hd">🔥 Today's Energy</div>
+              <input type="range" class="mood-sl" id="mood-sl" min="1" max="10" value="7" oninput="updateMood()">
+              <div class="mood-big" id="mood-em">😊</div>
+              <div class="mood-lbl" id="mood-lb">7/10 — Good Vibes!</div>
+              <input class="f-inp" id="mood-nt" placeholder="What's on your mind? (optional)" style="margin-top:14px">
+              <button class="btn-save" style="width:100%;margin-top:10px" onclick="saveMood()">Log Mood</button>
+            </div>
+            <div>
+              <div class="card">
+                <div class="card-hd">✨ Daily Affirmation</div>
+                <div class="aff" id="m-aff" style="font-size:0.875rem">Loading...</div>
+                <button onclick="newAff()" style="width:100%;background:transparent;border:none;color:var(--text3);font-size:0.72rem;cursor:pointer;padding:10px 0 0;font-family:'Plus Jakarta Sans',sans-serif">🔄 New</button>
+              </div>
+              <div class="card" style="margin-top:12px">
+                <div class="card-hd">📊 Mood History</div>
+                <div id="mood-hist"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- scroll-area -->
+
+      <nav id="bnav">
+        <div class="bnav-inner">
+          <button class="bb active" onclick="go('dashboard')" data-tab="dashboard"><span class="bb-ic">🎯</span>Home</button>
+          <button class="bb" onclick="go('todos')" data-tab="todos"><span class="bb-ic">✅</span>Tasks</button>
+          <button class="bb" onclick="go('expenses')" data-tab="expenses"><span class="bb-ic">💸</span>Spend</button>
+          <button class="bb" onclick="go('vault')" data-tab="vault"><span class="bb-ic">🔐</span>Vault</button>
+          <button class="bb" onclick="go('savings')" data-tab="savings"><span class="bb-ic">💰</span>Savings</button>
+          <button class="bb" onclick="go('progress')" data-tab="progress"><span class="bb-ic">📈</span>Goals</button>
+          <button class="bb" onclick="go('projects')" data-tab="projects"><span class="bb-ic">🚀</span>Projects</button>
+          <button class="bb" onclick="go('notes')" data-tab="notes"><span class="bb-ic">📓</span>Notes</button>
+          <button class="bb" onclick="go('habits')" data-tab="habits"><span class="bb-ic">🌿</span>Habits</button>
+          <button class="bb" onclick="go('mood')" data-tab="mood"><span class="bb-ic">🔥</span>Mood</button>
+          <button class="bb" onclick="logout()" style="color:var(--red)"><span class="bb-ic">🚪</span>Logout</button>
+        </div>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENT WALL -->
+<div id="pay-wall">
+  <div class="pw">
+    <div style="font-size:2.8rem">✨</div>
+    <h2>Trial Khatam!</h2>
+    <p>ALIGN use karte rehne ke liye subscribe karo.<br>Aapka data safe hai — sirf upgrade karo!</p>
+    <div class="plan-g">
+      <div class="plan"><div class="plan-nm">Basic</div><div class="plan-pr">₹299</div><div class="plan-pd">/month</div><button class="btn-plan" onclick="pay(299,'ALIGN Basic')">Subscribe</button></div>
+      <div class="plan feat"><div class="plan-tag">⭐ Best Value</div><div class="plan-nm" style="color:var(--purple3)">Pro</div><div class="plan-pr">₹599</div><div class="plan-pd">/month · AI included</div><button class="btn-plan" onclick="pay(599,'ALIGN Pro')">Subscribe</button></div>
+    </div>
+    <button onclick="logout()" style="background:transparent;border:none;color:var(--text3);font-size:0.75rem;cursor:pointer;text-decoration:underline">Sign out</button>
+  </div>
+</div>
+
+<!-- NOTE MODAL -->
+<div class="overlay" id="note-modal">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:14px">
+      <div style="font-size:1.15rem;font-weight:800;letter-spacing:-0.02em" id="nm-t"></div>
+      <button onclick="document.getElementById('note-modal').classList.remove('open')" style="background:transparent;border:none;color:var(--text2);font-size:1.1rem;cursor:pointer">✕</button>
+    </div>
+    <div style="color:var(--purple3);font-size:0.72rem;font-weight:700;margin-bottom:10px" id="nm-tg"></div>
+    <hr style="border:none;border-top:1px solid var(--border);margin-bottom:14px">
+    <p style="color:var(--text2);line-height:1.8;white-space:pre-wrap;font-size:0.875rem" id="nm-c"></p>
+  </div>
+</div>
+
+<script>
+const SB_URL='https://ejqzutuqbpjmlwvawxqv.supabase.co';
+const SB_KEY='sb_publishable_Y2MjXWcb8Un2ShTfIRhUmQ_2A2obWp8';
+const RZP='rzp_test_SpBOcSrRqOvFHP';
+const{createClient}=supabase;
+const db=createClient(SB_URL,SB_KEY);
+let U=null,tab='dashboard';
+
+const AFFS=["Main powerful hoon. Main successful hoon. 🔥","Har din mujhe naye opportunities milti hain. ✨","Mera future bright aur abundant hai. 💫","Main apne har goal achieve karta hoon. 🎯","Universe hamesha mera saath deta hai. 🌌","Main healthy, wealthy aur deeply happy hoon. 💚","Meri frequency high hai — magic hoti rehti hai. ⚡","The Frequency Reset mujhe aligned rakhta hai. 🧘","Paise meri taraf naturally attract hote hain. 💰","Mera kaam duniya mein impact kar raha hai. 🌍","Main fearless hoon. Main consistent hoon. 🦁","Aaj ka din mera best day hai. Abhi. Is pal. 🌅","Meri mehnat rang la rahi hai — daily. 📈","Main voh ban raha hoon jo mujhe banna tha. 🚀","Gratitude meri superpower hai. Thank you Universe. 🙏"];
+
+const TABS={dashboard:{t:'Dashboard',s:'Your personal command center',btn:false},todos:{t:'To-Do List',s:'Manage tasks & priorities',btn:'＋ Add Task',f:'form-todos'},expenses:{t:'Expenses',s:'Track every rupee you spend',btn:'＋ Add Expense',f:'form-expenses'},vault:{t:'Password Vault',s:'Store your login hints safely',btn:'＋ Add Entry',f:'form-vault'},savings:{t:'Savings & Investments',s:'Build your wealth portfolio',btn:'＋ Add',f:'form-savings'},progress:{t:'Progress Goals',s:'Track milestones & achievements',btn:'＋ Add Goal',f:'form-progress'},projects:{t:'Projects',s:'Manage your startup portfolio',btn:'＋ New Project',f:'form-projects'},notes:{t:'Notes & Journal',s:'Capture ideas & thoughts',btn:'＋ New Note',f:'form-notes'},habits:{t:'Habit Tracker',s:'Build powerful daily routines',btn:'＋ Add Habit',f:'form-habits'},mood:{t:'Mood & Motivator',s:'Log your energy, get inspired',btn:false}};
+
+window.addEventListener('load',async()=>{
+  if(localStorage.getItem('bio_cred_id')&&window.PublicKeyCredential)document.getElementById('bio-btn').style.display='flex';
+  document.getElementById('e-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('h-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
+  const{data:{session}}=await db.auth.getSession();
+  if(session){
+    U=session.user;
+    if(localStorage.getItem('bio_cred_id')&&window.PublicKeyCredential){
+      document.getElementById('lock-screen').style.display='flex';
+    } else {
+      startApp();
+    }
+  } else {
+    document.getElementById('auth-screen').style.display='flex';
+  }
+});
+
+function startApp(){
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('lock-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  const nm=U.email.split('@')[0].replace(/[._]/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+  const av=nm.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('sb-av').textContent=av;
+  document.getElementById('sb-name').textContent=nm;
+  checkSub();loadDash();newAff();
+}
+
+async function login(){
+  const e=document.getElementById('email').value.trim(),p=document.getElementById('password').value;
+  if(!e||!p){setErr('Email aur password bharo');return;}
+  const{data,error}=await db.auth.signInWithPassword({email:e,password:p});
+  if(error){setErr(error.message);return;}
+  U=data.user;startApp();offerBio();
+}
+async function register(){
+  const e=document.getElementById('reg-email').value.trim(),p=document.getElementById('reg-pass').value;
+  if(!e||!p){setErr('Dono fields bharo');return;}
+  if(p.length<6){setErr('Password min 6 characters');return;}
+  const{data,error}=await db.auth.signUp({email:e,password:p});
+  if(error){setErr(error.message);return;}
+  U=data.user;startApp();
+}
+async function logout(){await db.auth.signOut();U=null;document.getElementById('app').style.display='none';document.getElementById('auth-screen').style.display='flex';}
+function showReg(){document.getElementById('login-view').style.display='none';document.getElementById('reg-view').style.display='block';}
+function showLogin(){document.getElementById('reg-view').style.display='none';document.getElementById('login-view').style.display='block';}
+function backToPass(){document.getElementById('lock-screen').style.display='none';document.getElementById('auth-screen').style.display='flex';}
+function setErr(m){const el=document.getElementById('auth-err');el.textContent='❌ '+m;el.style.display='block';}
+
+async function offerBio(){
+  if(!window.PublicKeyCredential||localStorage.getItem('bio_cred_id'))return;
+  if(!confirm('👆 Biometric login setup karna chahoge?'))return;
+  try{const c=await navigator.credentials.create({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rp:{name:'ALIGN',id:window.location.hostname},user:{id:new TextEncoder().encode(U.id.substring(0,16)),name:U.email,displayName:U.email.split('@')[0]},pubKeyCredParams:[{alg:-7,type:'public-key'}],authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},timeout:60000}});localStorage.setItem('bio_cred_id',JSON.stringify(Array.from(new Uint8Array(c.rawId))));toast('✅ Biometric setup done!');document.getElementById('bio-btn').style.display='flex';}catch(e){}
+}
+async function biometricLogin(){
+  try{const r=JSON.parse(localStorage.getItem('bio_cred_id'));await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rpId:window.location.hostname,allowCredentials:[{type:'public-key',id:new Uint8Array(r)}],userVerification:'required',timeout:60000}});const{data:{session}}=await db.auth.getSession();if(session){U=session.user;startApp();}else backToPass();}catch(e){toast('Biometric failed','error');}
+}
+
+async function checkSub(){
+  try{
+    const{data:sub}=await db.from('subscriptions').select('*').eq('user_id',U.id).maybeSingle();
+    if(!sub){
+      await db.from('subscriptions').insert({user_id:U.id});
+      document.getElementById('trial-banner').style.display='flex';
+      document.getElementById('tb-txt').textContent='⏳ 7 din trial baki';return;
+    }
+    if(sub.status==='paid'&&sub.paid_until&&new Date(sub.paid_until)>new Date()){
+      document.getElementById('sb-plan').textContent='⭐ '+(sub.plan||'Pro');return;
+    }
+    const days=Math.ceil((new Date(sub.trial_end)-new Date())/(864e5));
+    if(days>0){document.getElementById('trial-banner').style.display='flex';document.getElementById('tb-txt').textContent=`⏳ ${days} din trial baki`;}
+    else showPayWall();
+  }catch(e){console.log('checkSub:',e);}
+}
+function showPayWall(){document.getElementById('pay-wall').style.display='flex';}
+function pay(amt,plan){
+  new Razorpay({key:RZP,amount:amt*100,currency:'INR',name:'ALIGN',description:plan,
+    handler:async(r)=>{const d=new Date();d.setMonth(d.getMonth()+1);await db.from('subscriptions').upsert({user_id:U.id,plan,status:'paid',paid_until:d.toISOString(),razorpay_payment_id:r.razorpay_payment_id},{onConflict:'user_id'});document.getElementById('pay-wall').style.display='none';document.getElementById('trial-banner').style.display='none';document.getElementById('sb-plan').textContent='⭐ '+plan;toast('🎉 Subscription active!');},
+    prefill:{email:U.email},theme:{color:'#8b5cf6'}}).open();
+}
+
+function go(t){
+  tab=t;
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('[data-tab]').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pane-'+t).classList.add('active');
+  document.querySelectorAll('[data-tab="'+t+'"]').forEach(b=>b.classList.add('active'));
+  const cfg=TABS[t];
+  document.getElementById('hdr-title').textContent=cfg.t;
+  document.getElementById('hdr-sub').textContent=cfg.s;
+  const btn=document.getElementById('add-btn');
+  if(cfg.btn){btn.style.display='flex';btn.textContent=cfg.btn;}else btn.style.display='none';
+  ({dashboard:loadDash,todos:loadTodos,expenses:loadExpenses,vault:loadVault,savings:loadSavings,progress:loadProgress,projects:loadProjects,notes:loadNotes,habits:loadHabits,mood:loadMood})[t]?.();
+}
+function triggerAdd(){const f=TABS[tab]?.f;if(f)toggleForm(f);}
+function toggleForm(id){const el=document.getElementById(id);el.classList.toggle('open');if(el.classList.contains('open'))el.scrollIntoView({behavior:'smooth',block:'start'});}
+function closeForm(id){document.getElementById(id).classList.remove('open');}
+
+function toast(m,t='success'){const el=document.getElementById('toast');el.textContent=m;el.className='show '+t;setTimeout(()=>el.className='',2600);}
+function newAff(){const a=AFFS[Math.floor(Math.random()*AFFS.length)];['d-aff','m-aff'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=a;});}
+function empty(ic,msg){return`<div class="empty" style="text-align:center;padding:40px 20px;color:var(--text3)"><div style="font-size:2.5rem;margin-bottom:10px;opacity:0.4">${ic}</div><div style="font-size:0.875rem">${msg}</div></div>`;}
+
+async function loadDash(){
+  newAff();
+  const today=new Date().toISOString().split('T')[0];
+  const[{data:td},{data:ex},{data:hb},{data:hl},{data:ap}]=await Promise.all([
+    db.from('todos').select('id').eq('user_id',U.id).eq('completed',false),
+    db.from('expenses').select('amount').eq('user_id',U.id).eq('date',today),
+    db.from('habits').select('id').eq('user_id',U.id),
+    db.from('habit_logs').select('id').eq('user_id',U.id).eq('date',today),
+    db.from('projects').select('id').eq('user_id',U.id).eq('status','in_progress')
+  ]);
+  document.getElementById('s-td').textContent=td?.length??0;
+  document.getElementById('s-sp').textContent='₹'+(ex||[]).reduce((s,e)=>s+Number(e.amount),0).toLocaleString('en-IN');
+  document.getElementById('s-hb').textContent=`${hl?.length??0}/${hb?.length??0}`;
+  document.getElementById('s-pr').textContent=ap?.length??0;
+  const{data:pr}=await db.from('projects').select('name,status').eq('user_id',U.id).limit(5);
+  const pEl=document.getElementById('d-projs');
+  pEl.innerHTML=pr?.length?pr.map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)"><span style="font-size:0.875rem;font-weight:600">${p.name}</span><span class="badge ${sc(p.status)}">${sl(p.status)}</span></div>`).join(''):empty('🚀','No projects yet');
+  const{data:ts}=await db.from('todos').select('*').eq('user_id',U.id).eq('completed',false).limit(4);
+  const tEl=document.getElementById('d-todos');
+  tEl.innerHTML=ts?.length?ts.map(t=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)"><button class="chk" onclick="qChk('${t.id}')"></button><div style="flex:1;font-size:0.875rem;font-weight:500">${t.title}</div><span class="badge b-${t.priority==='high'?'r':t.priority==='low'?'g':'o'}">${t.priority}</span></div>`).join(''):`<div style="color:var(--text3);font-size:0.82rem;text-align:center;padding:16px">All clear! ✨ No pending tasks.</div>`;
+}
+async function qChk(id){await db.from('todos').update({completed:true}).eq('id',id);loadDash();}
+
+async function loadTodos(){
+  const f=document.getElementById('todo-f')?.value||'all';
+  let q=db.from('todos').select('*').eq('user_id',U.id).order('created_at',{ascending:false});
+  if(f==='pending')q=q.eq('completed',false);if(f==='done')q=q.eq('completed',true);
+  const{data}=await q;
+  const el=document.getElementById('list-todos');
+  el.innerHTML=data?.length?data.map(t=>`<div class="li"><button class="chk ${t.completed?'on':''}" onclick="togTodo('${t.id}',${t.completed})">${t.completed?'✓':''}</button><div class="li-body"><div class="li-ttl" style="${t.completed?'text-decoration:line-through;opacity:0.4':''}">${t.title}</div><div class="li-sub">${t.description||''}${t.due_date?' · 📅 '+t.due_date:''}</div></div><span class="badge b-${t.priority==='high'?'r':t.priority==='low'?'g':'o'}">${t.priority}</span><button class="btn-del" onclick="del('todos',loadTodos,'${t.id}')">🗑</button></div>`).join(''):empty('✅','No tasks yet. Add your first task!');
+}
+async function addTodo(){
+  const t=document.getElementById('t-title').value.trim();
+  if(!t){toast('Task title bharo!','error');return;}
+  await db.from('todos').insert({user_id:U.id,title:t,description:document.getElementById('t-desc').value,priority:document.getElementById('t-pri').value,due_date:document.getElementById('t-due').value||null});
+  toast('✅ Task added!');['t-title','t-desc','t-due'].forEach(id=>document.getElementById(id).value='');closeForm('form-todos');loadTodos();
+}
+async function togTodo(id,done){await db.from('todos').update({completed:!done}).eq('id',id);loadTodos();}
+
+async function loadExpenses(){
+  const{data}=await db.from('expenses').select('*').eq('user_id',U.id).order('date',{ascending:false}).limit(50);
+  const today=new Date().toISOString().split('T')[0],month=today.substring(0,7);
+  document.getElementById('e-td').textContent='₹'+(data||[]).filter(e=>e.date===today).reduce((s,e)=>s+Number(e.amount),0).toLocaleString('en-IN');
+  document.getElementById('e-mo').textContent='₹'+(data||[]).filter(e=>e.date?.startsWith(month)).reduce((s,e)=>s+Number(e.amount),0).toLocaleString('en-IN');
+  document.getElementById('list-expenses').innerHTML=data?.length?data.map(e=>`<div class="li"><div class="li-ic" style="background:var(--red4)">${cE(e.category)}</div><div class="li-body"><div class="li-ttl">${e.description||e.category}</div><div class="li-sub">${e.category} · ${e.date}</div></div><div style="font-weight:800;color:var(--red);font-size:0.9rem">₹${Number(e.amount).toLocaleString('en-IN')}</div><button class="btn-del" onclick="del('expenses',loadExpenses,'${e.id}')">🗑</button></div>`).join(''):empty('💸','No expenses yet');
+}
+async function addExpense(){
+  const a=document.getElementById('e-amt').value;
+  if(!a){toast('Amount bharo!','error');return;}
+  const catRaw=document.getElementById('e-cat').value;
+  const cat=catRaw.includes(' ')?catRaw.split(' ').slice(1).join(' '):catRaw;
+  const{error}=await db.from('expenses').insert({
+    user_id:U.id,amount:Number(a),category:cat,
+    description:document.getElementById('e-desc').value,
+    date:document.getElementById('e-date').value||new Date().toISOString().split('T')[0]
+  });
+  if(error){toast('Error: '+error.message,'error');console.error('Expense error:',error);return;}
+  toast('💸 Expense saved!');
+  document.getElementById('e-amt').value='';
+  document.getElementById('e-desc').value='';
+  closeForm('form-expenses');loadExpenses();
+}
+function cE(c){return{Food:'🍔',Travel:'🚗',Shopping:'🛍',Health:'💊',Business:'💼',Entertainment:'🎬',Investment:'📈',Other:'📦'}[c]||'📦';}
+
+async function loadVault(){
+  const s=(document.getElementById('v-search')?.value||'').toLowerCase();
+  const{data}=await db.from('password_vault').select('*').eq('user_id',U.id).order('platform');
+  const list=(data||[]).filter(v=>v.platform.toLowerCase().includes(s));
+  document.getElementById('list-vault').innerHTML=list.length?list.map(v=>`<div class="vault-item"><div class="v-head"><span class="v-icon">🔐</span><span class="v-platform">${v.platform}</span><button class="btn-del" onclick="del('password_vault',loadVault,'${v.id}')">🗑</button></div>${v.username_hint?`<div class="v-row"><span class="v-key">Username</span><span class="v-val">${v.username_hint}</span></div>`:''} ${v.password_hint?`<div class="v-row"><span class="v-key">Pass Hint</span><span class="v-val">${v.password_hint}</span></div>`:''} ${v.notes?`<div class="v-row"><span class="v-key">Note</span><span class="v-val">${v.notes}</span></div>`:''}</div>`).join(''):empty('🔐','No entries yet');
+}
+async function addVault(){
+  const p=document.getElementById('v-pl').value.trim();if(!p){toast('Platform naam bharo!','error');return;}
+  await db.from('password_vault').insert({user_id:U.id,platform:p,username_hint:document.getElementById('v-us').value,password_hint:document.getElementById('v-pw').value,notes:document.getElementById('v-nt').value});
+  toast('🔐 Entry saved!');['v-pl','v-us','v-pw','v-nt'].forEach(id=>document.getElementById(id).value='');closeForm('form-vault');loadVault();
+}
+
+async function loadSavings(){
+  const{data}=await db.from('savings').select('*').eq('user_id',U.id).order('type');
+  const el=document.getElementById('list-savings');
+  if(!data?.length){el.innerHTML=empty('💰','No savings yet. Start building wealth!');return;}
+  const tot=(data||[]).reduce((s,d)=>s+Number(d.current_amount),0);
+  el.innerHTML=`<div class="card" style="text-align:center;margin-bottom:12px"><div style="font-size:0.68rem;color:var(--text3);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px">Total Portfolio</div><div style="font-size:2rem;font-weight:800;color:var(--green);letter-spacing:-0.03em">₹${tot.toLocaleString('en-IN')}</div></div>`+data.map(s=>{const pct=s.target_amount?Math.min(100,Math.round(s.current_amount/s.target_amount*100)):0;return`<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px"><div><div style="font-weight:700;font-size:0.9rem">${tE(s.type)} ${s.name}</div>${s.notes?`<div style="color:var(--text3);font-size:0.72rem;margin-top:2px">${s.notes}</div>`:''}</div><button class="btn-del" onclick="del('savings',loadSavings,'${s.id}')">🗑</button></div><div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:5px"><span style="color:var(--green);font-weight:700">₹${Number(s.current_amount).toLocaleString('en-IN')}</span>${s.target_amount?`<span style="color:var(--text3)">Target ₹${Number(s.target_amount).toLocaleString('en-IN')} · ${pct}%</span>`:''}</div>${s.target_amount?`<div class="prog"><div class="prog-f gn" style="width:${pct}%"></div></div>`:''}<div class="upd-row"><input class="upd-inp" type="number" placeholder="Update amount..." id="su-${s.id}"><button class="upd-btn" onclick="updSav('${s.id}')">Update ✓</button></div></div>`}).join('');
+}
+async function addSaving(){
+  const n=document.getElementById('sv-n').value.trim();if(!n){toast('Naam bharo!','error');return;}
+  await db.from('savings').insert({user_id:U.id,name:n,type:document.getElementById('sv-t').value,current_amount:Number(document.getElementById('sv-c').value)||0,target_amount:Number(document.getElementById('sv-g').value)||null,notes:document.getElementById('sv-nt').value});
+  toast('💰 Saved!');['sv-n','sv-c','sv-g','sv-nt'].forEach(id=>document.getElementById(id).value='');closeForm('form-savings');loadSavings();
+}
+async function updSav(id){const v=document.getElementById('su-'+id).value;if(!v)return;await db.from('savings').update({current_amount:Number(v)}).eq('id',id);toast('✅ Updated!');loadSavings();}
+function tE(t){return{savings:'💵',investment:'📈',crypto:'₿'}[t]||'💰';}
+
+async function loadProgress(){
+  const{data}=await db.from('progress_goals').select('*').eq('user_id',U.id).order('created_at',{ascending:false});
+  document.getElementById('list-progress').innerHTML=data?.length?data.map(g=>{const pct=g.target?Math.min(100,Math.round(g.current_value/g.target*100)):0;return`<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:7px"><div style="font-weight:700;font-size:0.9rem">🎯 ${g.title}</div><button class="btn-del" onclick="del('progress_goals',loadProgress,'${g.id}')">🗑</button></div><div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:6px"><span style="color:var(--purple3);font-weight:700">${g.current_value} ${g.unit||''}</span><span style="color:var(--text3)">Target ${g.target||'?'} ${g.unit||''}</span><span class="badge ${pct>=100?'b-g':'b-p'}">${pct}%</span></div><div class="prog"><div class="prog-f" style="width:${pct}%"></div></div>${g.deadline?`<div style="color:var(--text3);font-size:0.68rem;margin-top:7px;font-weight:700">📅 ${g.deadline}</div>`:''}<div class="upd-row"><input class="upd-inp" type="number" placeholder="Update current value..." id="pu-${g.id}"><button class="upd-btn" onclick="updGoal('${g.id}')">Update ✓</button></div></div>`}).join(''):empty('📈','No goals yet. Set your first milestone!');
+}
+async function addGoal(){
+  const t=document.getElementById('p-ti').value.trim();if(!t){toast('Title bharo!','error');return;}
+  await db.from('progress_goals').insert({user_id:U.id,title:t,current_value:Number(document.getElementById('p-cu').value)||0,target:Number(document.getElementById('p-tg').value)||null,unit:document.getElementById('p-un').value,deadline:document.getElementById('p-dl').value||null});
+  toast('🎯 Goal added!');['p-ti','p-cu','p-tg','p-un','p-dl'].forEach(id=>document.getElementById(id).value='');closeForm('form-progress');loadProgress();
+}
+async function updGoal(id){const v=document.getElementById('pu-'+id).value;if(!v)return;await db.from('progress_goals').update({current_value:Number(v)}).eq('id',id);toast('✅ Updated!');loadProgress();}
+
+async function loadProjects(){
+  const{data}=await db.from('projects').select('*').eq('user_id',U.id).order('created_at',{ascending:false});
+  document.getElementById('list-projects').innerHTML=data?.length?data.map(p=>`<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px"><div><div style="font-weight:800;font-size:0.95rem">🚀 ${p.name}</div>${p.description?`<div style="color:var(--text2);font-size:0.78rem;margin-top:2px">${p.description}</div>`:''}</div><button class="btn-del" onclick="del('projects',loadProjects,'${p.id}')">🗑</button></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><span class="badge ${sc(p.status)}">${sl(p.status)}</span>${p.next_step?`<span style="color:var(--text3);font-size:0.75rem">→ ${p.next_step}</span>`:''}</div><select class="f-inp" style="font-size:0.78rem;padding:8px" onchange="updProj('${p.id}',this.value)"><option value="">Update status...</option><option value="planned">📋 Planned</option><option value="in_progress">⚡ In Progress</option><option value="demo_ready">✅ Demo Ready</option><option value="complete">🏆 Complete</option><option value="paused">⏸ Paused</option></select></div>`).join(''):empty('🚀','No projects yet. Add your first!');
+}
+async function addProject(){
+  const n=document.getElementById('pr-n').value.trim();if(!n){toast('Project naam bharo!','error');return;}
+  await db.from('projects').insert({user_id:U.id,name:n,status:document.getElementById('pr-s').value,description:document.getElementById('pr-d').value,next_step:document.getElementById('pr-nx').value});
+  toast('🚀 Project added!');['pr-n','pr-d','pr-nx'].forEach(id=>document.getElementById(id).value='');closeForm('form-projects');loadProjects();
+}
+async function updProj(id,st){if(!st)return;await db.from('projects').update({status:st}).eq('id',id);toast('✅ Updated!');loadProjects();}
+function sc(s){return{planned:'b-p',in_progress:'b-b',demo_ready:'b-g',complete:'b-g',paused:'b-gray'}[s]||'b-gray';}
+function sl(s){return{planned:'📋 Planned',in_progress:'⚡ In Progress',demo_ready:'✅ Demo Ready',complete:'🏆 Complete',paused:'⏸ Paused'}[s]||s;}
+
+async function loadNotes(){
+  const{data}=await db.from('notes').select('*').eq('user_id',U.id).order('created_at',{ascending:false});
+  document.getElementById('list-notes').innerHTML=data?.length?data.map(n=>`<div class="li" onclick="openNote('${e_(n.title)}','${e_(n.content||'')}','${e_(n.tags||'')}')" style="cursor:pointer;flex-direction:column;align-items:start"><div style="display:flex;width:100%;align-items:center;justify-content:space-between;margin-bottom:5px"><div style="font-weight:700;font-size:0.875rem">${n.title}</div><button class="btn-del" onclick="event.stopPropagation();del('notes',loadNotes,'${n.id}')">🗑</button></div>${n.tags?`<div style="color:var(--purple3);font-size:0.68rem;font-weight:700;margin-bottom:3px">#${n.tags}</div>`:''}<div style="color:var(--text3);font-size:0.78rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${n.content||''}</div></div>`).join(''):empty('📓','No notes yet. Capture your first idea!');
+}
+async function addNote(){
+  const t=document.getElementById('n-ti').value.trim();if(!t){toast('Title bharo!','error');return;}
+  await db.from('notes').insert({user_id:U.id,title:t,content:document.getElementById('n-co').value,tags:document.getElementById('n-tg').value});
+  toast('📓 Note saved!');['n-ti','n-co','n-tg'].forEach(id=>document.getElementById(id).value='');closeForm('form-notes');loadNotes();
+}
+function openNote(t,c,tg){document.getElementById('nm-t').textContent=t;document.getElementById('nm-c').textContent=c.replace(/\\n/g,'\n');document.getElementById('nm-tg').textContent=tg?'#'+tg:'';document.getElementById('note-modal').classList.add('open');}
+function e_(s){return s.replace(/'/g,"&#39;").replace(/\n/g,'\\n');}
+
+async function loadHabits(){
+  const today=new Date().toISOString().split('T')[0];
+  const[{data:hb},{data:lg}]=await Promise.all([db.from('habits').select('*').eq('user_id',U.id).order('created_at'),db.from('habit_logs').select('habit_id').eq('user_id',U.id).eq('date',today)]);
+  const done=new Set((lg||[]).map(l=>l.habit_id));
+  document.getElementById('list-habits').innerHTML=hb?.length?hb.map(h=>`<div class="habit-row"><button class="hbt ${done.has(h.id)?'on':''}" onclick="togHabit('${h.id}',${done.has(h.id)})">${done.has(h.id)?'✅':(h.emoji||'⬜')}</button><div style="flex:1"><div style="font-weight:600;font-size:0.875rem;${done.has(h.id)?'text-decoration:line-through;opacity:0.4':''}">${h.name}</div><div style="font-size:0.7rem;color:var(--text3);margin-top:2px">${done.has(h.id)?'✅ Done today!':'Pending...'}</div></div><button class="btn-del" onclick="del('habits',loadHabits,'${h.id}')">🗑</button></div>`).join(''):empty('🌿','No habits yet. Build your routine!');
+}
+async function addHabit(){
+  const n=document.getElementById('h-n').value.trim();if(!n){toast('Naam bharo!','error');return;}
+  await db.from('habits').insert({user_id:U.id,name:n,emoji:document.getElementById('h-e').value||'✨'});
+  toast('🌿 Habit added!');['h-n','h-e'].forEach(id=>document.getElementById(id).value='');closeForm('form-habits');loadHabits();
+}
+async function togHabit(id,done){
+  const today=new Date().toISOString().split('T')[0];
+  if(done)await db.from('habit_logs').delete().eq('habit_id',id).eq('date',today);
+  else{await db.from('habit_logs').insert({habit_id:id,user_id:U.id,date:today});toast('🌿 Habit done! Great work!');}
+  loadHabits();
+}
+
+const MDS=[{max:2,e:'😞',l:'Bahut bura'},{max:3,e:'😔',l:'Thoda down'},{max:4,e:'😐',l:'Theek hai'},{max:5,e:'🙂',l:'Decent feel'},{max:6,e:'😊',l:'Good vibes!'},{max:7,e:'😄',l:'Feeling good!'},{max:8,e:'🤩',l:'Amazing!'},{max:9,e:'🔥',l:'On fire!!'},{max:10,e:'⚡',l:'PEAK STATE!'}];
+function updateMood(){const v=parseInt(document.getElementById('mood-sl').value);const m=MDS.find(x=>v<=x.max)||MDS[MDS.length-1];document.getElementById('mood-em').textContent=m.e;document.getElementById('mood-lb').textContent=`${v}/10 — ${m.l}`;}
+async function saveMood(){
+  const mood=parseInt(document.getElementById('mood-sl').value),note=document.getElementById('mood-nt').value,today=new Date().toISOString().split('T')[0];
+  await db.from('mood_logs').upsert({user_id:U.id,mood,note,date:today},{onConflict:'user_id,date'});
+  toast('🔥 Mood logged!');document.getElementById('mood-nt').value='';loadMoodHistory();
+}
+async function loadMood(){updateMood();newAff();loadMoodHistory();}
+async function loadMoodHistory(){
+  const{data}=await db.from('mood_logs').select('*').eq('user_id',U.id).order('date',{ascending:false}).limit(7);
+  document.getElementById('mood-hist').innerHTML=data?.length?data.map(m=>{const md=MDS.find(x=>m.mood<=x.max)||MDS[MDS.length-1];return`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:1.1rem">${md.e}</span><span style="font-size:0.78rem;color:var(--text2);flex:1">${m.date}</span><span style="font-weight:700;color:var(--purple3);font-size:0.875rem">${m.mood}/10</span></div>`}).join(''):`<div style="color:var(--text3);font-size:0.8rem;text-align:center;padding:12px">No mood logs yet</div>`;
+}
+
+async function del(table,reload,id){await db.from(table).delete().eq('id',id);toast('🗑 Deleted');reload();}
+updateMood();
+</script>
+</body>
+</html>

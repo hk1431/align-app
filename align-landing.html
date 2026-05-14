@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALIGN — Live in Flow</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07071a;--bg2:#0d0d24;--bg3:#13132e;
+  --card:#0f0f28;--card2:#181838;--border:#252545;
+  --accent:#8b5cf6;--accent2:#6d28d9;--accent3:#a78bfa;
+  --gold:#f59e0b;--green:#10b981;--red:#f43f5e;--blue:#38bdf8;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --r:14px;--r2:20px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow-x:hidden}
+h1,h2,h3,h4,nav .logo{font-family:'Syne',sans-serif}
+
+/* BG EFFECTS */
+body::before{content:'';position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 10%, rgba(139,92,246,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 80%, rgba(56,189,248,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 50% 50%, rgba(139,92,246,0.03) 0%, transparent 70%);
+  pointer-events:none;z-index:0}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;
+  background:rgba(7,7,26,0.85);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(37,37,69,0.6);padding:0 5%}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:68px;max-width:1200px;margin:0 auto}
+.logo{font-size:1.4rem;font-weight:800;letter-spacing:-0.02em;
+  background:linear-gradient(135deg,#a78bfa,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-links{display:flex;align-items:center;gap:32px}
+.nav-links a{color:var(--text2);text-decoration:none;font-size:0.9rem;transition:color 0.2s}
+.nav-links a:hover{color:var(--text)}
+.btn-nav{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;
+  color:#fff;font-size:0.875rem;font-family:'Syne',sans-serif;font-weight:700;padding:10px 20px;
+  cursor:pointer;text-decoration:none;transition:opacity 0.2s;letter-spacing:0.03em}
+.btn-nav:hover{opacity:0.88}
+
+/* SECTIONS */
+section{position:relative;z-index:1;padding:100px 5%}
+.container{max-width:1200px;margin:0 auto}
+
+/* HERO */
+.hero{padding-top:160px;padding-bottom:120px;text-align:center}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;
+  background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.25);
+  border-radius:40px;padding:6px 16px;font-size:0.8rem;color:var(--accent3);
+  margin-bottom:28px;font-weight:500;letter-spacing:0.05em}
+.hero-badge span{width:6px;height:6px;border-radius:50%;background:var(--accent3);animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.hero h1{font-size:clamp(2.8rem,7vw,5.5rem);font-weight:800;line-height:1.05;
+  letter-spacing:-0.03em;margin-bottom:24px}
+.hero h1 .grad{background:linear-gradient(135deg,#a78bfa 0%,#38bdf8 50%,#10b981 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-sub{font-size:clamp(1rem,2.5vw,1.25rem);color:var(--text2);max-width:640px;
+  margin:0 auto 40px;line-height:1.7;font-weight:300}
+.hero-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;
+  border-radius:12px;color:#fff;font-size:1rem;font-family:'Syne',sans-serif;font-weight:700;
+  padding:16px 32px;cursor:pointer;text-decoration:none;transition:all 0.2s;letter-spacing:0.03em;
+  display:inline-flex;align-items:center;gap:8px}
+.btn-primary:hover{opacity:0.88;transform:translateY(-1px)}
+.btn-secondary{background:transparent;border:1px solid var(--border);border-radius:12px;
+  color:var(--text);font-size:1rem;font-family:'DM Sans',sans-serif;font-weight:500;
+  padding:16px 32px;cursor:pointer;text-decoration:none;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px}
+.btn-secondary:hover{border-color:var(--accent3);color:var(--accent3)}
+.hero-stats{display:flex;gap:40px;justify-content:center;margin-top:60px;flex-wrap:wrap}
+.hero-stat{text-align:center}
+.hero-stat-val{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;
+  background:linear-gradient(135deg,#a78bfa,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-stat-lbl{color:var(--text3);font-size:0.8rem;margin-top:2px}
+
+/* APP PREVIEW */
+.preview-section{padding:0 5% 100px}
+.preview-wrap{max-width:1100px;margin:0 auto;
+  background:var(--card);border:1px solid var(--border);border-radius:24px;
+  padding:28px;box-shadow:0 40px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(139,92,246,0.05)}
+.preview-bar{display:flex;gap:6px;margin-bottom:20px}
+.preview-dot{width:10px;height:10px;border-radius:50%}
+.preview-dot:nth-child(1){background:#f43f5e}
+.preview-dot:nth-child(2){background:#f59e0b}
+.preview-dot:nth-child(3){background:#10b981}
+.preview-url{flex:1;background:var(--bg2);border-radius:6px;height:24px;
+  display:flex;align-items:center;padding:0 12px;color:var(--text3);font-size:0.75rem}
+.preview-app{background:var(--bg);border-radius:14px;padding:20px;display:grid;
+  grid-template-columns:180px 1fr;gap:14px;min-height:320px}
+.preview-sidebar{background:var(--card);border-radius:10px;padding:16px}
+.preview-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;
+  background:linear-gradient(135deg,#a78bfa,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:16px}
+.preview-nav-item{padding:8px 10px;border-radius:8px;font-size:0.78rem;color:var(--text2);margin-bottom:2px}
+.preview-nav-item.active{background:rgba(139,92,246,0.15);color:var(--accent3)}
+.preview-content{display:grid;grid-template-rows:auto 1fr;gap:14px}
+.preview-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.preview-card{background:var(--card);border-radius:10px;padding:14px}
+.preview-card-val{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;margin-bottom:2px}
+.preview-card-lbl{color:var(--text3);font-size:0.7rem}
+.preview-bottom{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.preview-panel{background:var(--card);border-radius:10px;padding:14px}
+.preview-panel-title{font-size:0.75rem;font-weight:600;margin-bottom:10px;color:var(--text2)}
+.preview-item{display:flex;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)}
+.preview-item:last-child{border:none}
+.preview-check{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--border);flex-shrink:0}
+.preview-check.done{background:var(--green);border-color:var(--green)}
+.preview-item-txt{font-size:0.72rem;color:var(--text2)}
+
+/* FEATURES */
+.section-label{font-size:0.75rem;font-weight:600;color:var(--accent3);letter-spacing:0.12em;
+  text-transform:uppercase;margin-bottom:14px}
+.section-title{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;letter-spacing:-0.02em;
+  margin-bottom:16px;line-height:1.15}
+.section-sub{color:var(--text2);font-size:1rem;max-width:560px;line-height:1.7}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:52px}
+.feat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:28px;
+  transition:border-color 0.2s,transform 0.2s;position:relative;overflow:hidden}
+.feat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0;transition:opacity 0.3s}
+.feat-card:hover{border-color:rgba(139,92,246,0.3);transform:translateY(-3px)}
+.feat-card:hover::before{opacity:1}
+.feat-icon{font-size:2rem;margin-bottom:16px}
+.feat-title{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700;margin-bottom:8px}
+.feat-desc{color:var(--text2);font-size:0.875rem;line-height:1.6}
+
+/* HOW IT WORKS */
+.how-section{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;margin-top:52px}
+.step{text-align:center;position:relative}
+.step:not(:last-child)::after{content:'→';position:absolute;top:28px;right:-24px;
+  color:var(--border);font-size:1.5rem}
+.step-num{width:56px;height:56px;border-radius:16px;
+  background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(56,189,248,0.1));
+  border:1px solid rgba(139,92,246,0.3);display:flex;align-items:center;justify-content:center;
+  margin:0 auto 20px;font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--accent3)}
+.step h3{font-size:1.05rem;font-weight:700;margin-bottom:10px}
+.step p{color:var(--text2);font-size:0.875rem;line-height:1.6}
+
+/* PRICING */
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:52px;align-items:start}
+.price-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:32px;position:relative}
+.price-card.featured{border-color:var(--accent);background:linear-gradient(135deg,rgba(139,92,246,0.08),var(--card))}
+.price-badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+  background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:40px;
+  padding:5px 18px;font-size:0.75rem;font-family:'Syne',sans-serif;font-weight:700;color:#fff;white-space:nowrap}
+.price-name{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:var(--text2);
+  margin-bottom:10px;letter-spacing:0.05em;text-transform:uppercase}
+.price-val{font-family:'Syne',sans-serif;font-size:2.8rem;font-weight:800;line-height:1;margin-bottom:4px}
+.price-val span{font-size:1rem;color:var(--text2);font-weight:400}
+.price-inr{color:var(--text3);font-size:0.8rem;margin-bottom:24px}
+.price-divider{border:none;border-top:1px solid var(--border);margin:20px 0}
+.price-features{list-style:none;margin-bottom:28px}
+.price-features li{display:flex;align-items:start;gap:10px;font-size:0.875rem;
+  color:var(--text2);margin-bottom:10px}
+.price-features li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0;margin-top:1px}
+.price-features li.no::before{content:'✕';color:var(--text3)}
+.price-features li.no{color:var(--text3)}
+.btn-price{width:100%;padding:14px;border-radius:12px;font-size:0.9rem;font-family:'Syne',sans-serif;
+  font-weight:700;cursor:pointer;transition:all 0.2s;text-align:center;display:block;text-decoration:none;letter-spacing:0.03em}
+.btn-price-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff}
+.btn-price-primary:hover{opacity:0.88}
+.btn-price-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-price-outline:hover{border-color:var(--accent3);color:var(--accent3)}
+.price-note{text-align:center;color:var(--text3);font-size:0.78rem;margin-top:16px}
+
+/* TESTIMONIAL */
+.testimonials{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);text-align:center}
+.testimonial-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:48px}
+.tcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:24px;text-align:left}
+.tcard-stars{color:var(--gold);font-size:0.9rem;margin-bottom:14px}
+.tcard-text{color:var(--text2);font-size:0.875rem;line-height:1.7;margin-bottom:20px;font-style:italic}
+.tcard-author{display:flex;align-items:center;gap:10px}
+.tcard-avatar{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-weight:800;font-size:0.9rem;color:#fff;flex-shrink:0}
+.tcard-name{font-weight:600;font-size:0.875rem}
+.tcard-role{color:var(--text3);font-size:0.75rem}
+
+/* FINAL CTA */
+.cta-section{text-align:center;padding:120px 5%}
+.cta-inner{max-width:640px;margin:0 auto}
+.cta-section h2{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;letter-spacing:-0.03em;margin-bottom:20px;line-height:1.1}
+.cta-section p{color:var(--text2);font-size:1rem;margin-bottom:36px;line-height:1.7}
+
+/* FOOTER */
+footer{background:var(--bg2);border-top:1px solid var(--border);padding:40px 5%;text-align:center;position:relative;z-index:1}
+.footer-logo{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;
+  background:linear-gradient(135deg,#a78bfa,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+.footer-sub{color:var(--text3);font-size:0.8rem;margin-bottom:24px}
+.footer-links{display:flex;gap:24px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
+.footer-links a{color:var(--text3);text-decoration:none;font-size:0.85rem;transition:color 0.2s}
+.footer-links a:hover{color:var(--text)}
+.footer-copy{color:var(--text3);font-size:0.78rem}
+
+/* MOBILE */
+@media(max-width:768px){
+  nav{padding:0 4%}
+  .nav-links{display:none}
+  section{padding:70px 4%}
+  .preview-section{padding:0 4% 70px}
+  .preview-app{grid-template-columns:1fr}
+  .preview-sidebar{display:none}
+  .preview-cards{grid-template-columns:1fr 1fr}
+  .steps{grid-template-columns:1fr;gap:28px}
+  .step:not(:last-child)::after{display:none}
+  .pricing-grid{grid-template-columns:1fr}
+  .testimonial-grid{grid-template-columns:1fr}
+  .hero h1{letter-spacing:-0.02em}
+}
+@media(max-width:520px){
+  .preview-cards{grid-template-columns:1fr}
+  .preview-bottom{grid-template-columns:1fr}
+  .hero-stats{gap:24px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <div class="logo">✨ ALIGN</div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="align.html" class="btn-nav">Open App →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge"><span></span>Your All-in-One Personal OS</div>
+    <h1>Stop Juggling.<br><span class="grad">Live in Flow.</span></h1>
+    <p class="hero-sub">ALIGN brings your tasks, money, habits, goals, and projects into one beautiful dashboard — so you can focus on what actually matters.</p>
+    <div class="hero-btns">
+      <a href="align.html" class="btn-primary">Start Free Trial ✨</a>
+      <a href="#features" class="btn-secondary">See Features →</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-val">10+</div>
+        <div class="hero-stat-lbl">Powerful Features</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">7</div>
+        <div class="hero-stat-lbl">Day Free Trial</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">100%</div>
+        <div class="hero-stat-lbl">Data Private</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">₹0</div>
+        <div class="hero-stat-lbl">To Start</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- APP PREVIEW -->
+<div class="preview-section">
+  <div class="container">
+    <div class="preview-wrap">
+      <div class="preview-bar">
+        <div class="preview-dot"></div>
+        <div class="preview-dot"></div>
+        <div class="preview-dot"></div>
+        <div class="preview-url">✨ align.app/dashboard</div>
+      </div>
+      <div class="preview-app">
+        <div class="preview-sidebar">
+          <div class="preview-logo">✨ ALIGN</div>
+          <div class="preview-nav-item active">🎯 Dashboard</div>
+          <div class="preview-nav-item">✅ To-Do List</div>
+          <div class="preview-nav-item">💸 Expenses</div>
+          <div class="preview-nav-item">🔐 Vault</div>
+          <div class="preview-nav-item">💰 Savings</div>
+          <div class="preview-nav-item">📈 Progress</div>
+          <div class="preview-nav-item">🚀 Projects</div>
+          <div class="preview-nav-item">📓 Notes</div>
+          <div class="preview-nav-item">🌿 Habits</div>
+          <div class="preview-nav-item">🔥 Mood</div>
+        </div>
+        <div class="preview-content">
+          <div class="preview-cards">
+            <div class="preview-card">
+              <div class="preview-card-val" style="color:#a78bfa">5</div>
+              <div class="preview-card-lbl">Pending Tasks</div>
+            </div>
+            <div class="preview-card">
+              <div class="preview-card-val" style="color:#10b981">₹840</div>
+              <div class="preview-card-lbl">Today's Spend</div>
+            </div>
+            <div class="preview-card">
+              <div class="preview-card-val" style="color:#f59e0b">4/5</div>
+              <div class="preview-card-lbl">Habits Done</div>
+            </div>
+          </div>
+          <div class="preview-bottom">
+            <div class="preview-panel">
+              <div class="preview-panel-title">Today's Tasks</div>
+              <div class="preview-item"><div class="preview-check done"></div><div class="preview-item-txt">Morning meditation</div></div>
+              <div class="preview-item"><div class="preview-check done"></div><div class="preview-item-txt">Client call at 11am</div></div>
+              <div class="preview-item"><div class="preview-check"></div><div class="preview-item-txt">Review GENIE build</div></div>
+              <div class="preview-item"><div class="preview-check"></div><div class="preview-item-txt">Send invoice to client</div></div>
+            </div>
+            <div class="preview-panel">
+              <div class="preview-panel-title">Affirmation</div>
+              <div style="color:var(--accent3);font-size:0.75rem;line-height:1.6;font-style:italic;padding:10px;background:rgba(139,92,246,0.08);border-radius:8px">
+                "Main powerful hoon. Main successful hoon. Universe hamesha mera saath deta hai." ✨
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="container">
+    <div class="section-label">Everything you need</div>
+    <h2 class="section-title">One App.<br>Your Entire Life — Organized.</h2>
+    <p class="section-sub">Stop switching between 10 different apps. ALIGN brings everything into one clean, beautiful space.</p>
+    <div class="features-grid">
+      <div class="feat-card">
+        <div class="feat-icon">🎯</div>
+        <div class="feat-title">Smart Dashboard</div>
+        <div class="feat-desc">See your entire life at a glance — pending tasks, daily spend, habit streaks, and a daily affirmation to fuel your day.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">✅</div>
+        <div class="feat-title">To-Do List</div>
+        <div class="feat-desc">Capture tasks with priority levels (High/Medium/Low), due dates, and descriptions. Never miss what matters.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">💸</div>
+        <div class="feat-title">Expense Tracker</div>
+        <div class="feat-desc">Track daily spending by category. See today's total and monthly summary at a glance. Know exactly where your money goes.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔐</div>
+        <div class="feat-title">Password Vault</div>
+        <div class="feat-desc">Store secure hints and notes for all your platforms. No more forgetting which password you used where.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">💰</div>
+        <div class="feat-title">Savings & Investments</div>
+        <div class="feat-desc">Track your savings goals, investments, and crypto holdings. Visual progress bars show how close you are to your targets.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📈</div>
+        <div class="feat-title">Progress Tracker</div>
+        <div class="feat-desc">Set goals with targets and deadlines. Watch your progress fill up in real-time. Your wins — visualized.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🚀</div>
+        <div class="feat-title">Project Tracker</div>
+        <div class="feat-desc">Manage all your projects with status tracking — Planned, In Progress, Demo Ready, Complete. Always know your next step.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📓</div>
+        <div class="feat-title">Notes & Journal</div>
+        <div class="feat-desc">Capture ideas, journal your thoughts, tag your notes. Your second brain — always accessible.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🌿</div>
+        <div class="feat-title">Habit Tracker</div>
+        <div class="feat-desc">Build powerful daily routines. Check off habits with one tap. See today's completion rate and build unstoppable streaks.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔥</div>
+        <div class="feat-title">Mood & Motivator</div>
+        <div class="feat-desc">Log your daily energy level. Get a powerful affirmation curated to lift your frequency. Track your mood over time.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" class="how-section">
+  <div class="container">
+    <div style="text-align:center">
+      <div class="section-label">Simple to start</div>
+      <h2 class="section-title">Up and running in minutes</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Sign Up Free</h3>
+        <p>Create your account in 30 seconds. No credit card required. Get 7 days full access — free.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Set Up Your Life</h3>
+        <p>Add your tasks, goals, habits, and projects. Set up your biometric login for instant access.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Live in Flow</h3>
+        <p>Open ALIGN every morning. See your dashboard. Stay aligned with what matters. Every single day.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="container">
+    <div style="text-align:center">
+      <div class="section-label">Simple pricing</div>
+      <h2 class="section-title">Start free. Upgrade when ready.</h2>
+      <p class="section-sub" style="margin:0 auto">No hidden fees. Cancel anytime. Your data is always yours.</p>
+    </div>
+    <div class="pricing-grid">
+
+      <!-- FREE TRIAL -->
+      <div class="price-card">
+        <div class="price-name">Free Trial</div>
+        <div class="price-val">₹0 <span>/ 7 days</span></div>
+        <div class="price-inr">No credit card needed</div>
+        <hr class="price-divider">
+        <ul class="price-features">
+          <li>All 10 features unlocked</li>
+          <li>Biometric login</li>
+          <li>Sync across all devices</li>
+          <li>Up to 50 entries per section</li>
+          <li class="no">Priority support</li>
+          <li class="no">Future AI features</li>
+        </ul>
+        <a href="align.html" class="btn-price btn-price-outline">Start Free Trial</a>
+      </div>
+
+      <!-- BASIC -->
+      <div class="price-card featured">
+        <div class="price-badge">⭐ Most Popular</div>
+        <div class="price-name">ALIGN Basic</div>
+        <div class="price-val">$5 <span>/ month</span></div>
+        <div class="price-inr">₹299/month · Billed monthly</div>
+        <hr class="price-divider">
+        <ul class="price-features">
+          <li>All 10 features unlocked</li>
+          <li>Biometric login</li>
+          <li>Sync across all devices</li>
+          <li>Unlimited entries</li>
+          <li>Email support</li>
+          <li class="no">Future AI features</li>
+        </ul>
+        <a href="align.html" class="btn-price btn-price-primary">Get Started →</a>
+      </div>
+
+      <!-- PRO -->
+      <div class="price-card">
+        <div class="price-name">ALIGN Pro</div>
+        <div class="price-val">$9 <span>/ month</span></div>
+        <div class="price-inr">₹599/month · Billed monthly</div>
+        <hr class="price-divider">
+        <ul class="price-features">
+          <li>Everything in Basic</li>
+          <li>Priority support</li>
+          <li>AI-powered insights (coming soon)</li>
+          <li>Advanced analytics</li>
+          <li>Custom affirmations (AI)</li>
+          <li>Early access to new features</li>
+        </ul>
+        <a href="align.html" class="btn-price btn-price-outline">Go Pro →</a>
+      </div>
+
+    </div>
+    <p class="price-note">All plans include: Secure data, biometric login, mobile + desktop access</p>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+  <div class="container">
+    <div class="section-label">What users say</div>
+    <h2 class="section-title">People who live in ALIGN</h2>
+    <div class="testimonial-grid">
+      <div class="tcard">
+        <div class="tcard-stars">★★★★★</div>
+        <p class="tcard-text">"ALIGN ne meri zindagi badal di. Pehle 5 alag apps use karta tha — ab sirf ek. Dashboard se din shuru hota hai aur affirmation se energy aa jaati hai!"</p>
+        <div class="tcard-author">
+          <div class="tcard-avatar" style="background:linear-gradient(135deg,#7c3aed,#4f46e5)">RS</div>
+          <div><div class="tcard-name">Rahul S.</div><div class="tcard-role">Entrepreneur, Delhi</div></div>
+        </div>
+      </div>
+      <div class="tcard">
+        <div class="tcard-stars">★★★★★</div>
+        <p class="tcard-text">"The biometric login is a game changer. I open it every morning like my mission control. Expense tracker alone saved me ₹8000 last month by showing me where I was leaking money."</p>
+        <div class="tcard-author">
+          <div class="tcard-avatar" style="background:linear-gradient(135deg,#0891b2,#0e7490)">PK</div>
+          <div><div class="tcard-name">Priya K.</div><div class="tcard-role">Freelancer, Bangalore</div></div>
+        </div>
+      </div>
+      <div class="tcard">
+        <div class="tcard-stars">★★★★★</div>
+        <p class="tcard-text">"As a coach I recommend ALIGN to all my clients. The habit tracker + mood logger combo is powerful. My clients who use it consistently see results 3x faster."</p>
+        <div class="tcard-author">
+          <div class="tcard-avatar" style="background:linear-gradient(135deg,#059669,#047857)">AM</div>
+          <div><div class="tcard-name">Amit M.</div><div class="tcard-role">Life Coach, Mumbai</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="cta-section">
+  <div class="cta-inner">
+    <h2>Ready to <span style="background:linear-gradient(135deg,#a78bfa,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Live in Flow?</span></h2>
+    <p>Join thousands who have replaced chaos with clarity. Start your 7-day free trial — no credit card required.</p>
+    <div class="hero-btns">
+      <a href="align.html" class="btn-primary">Start Free Trial — It's Free ✨</a>
+    </div>
+    <p style="color:var(--text3);font-size:0.8rem;margin-top:16px">7 days free · No credit card · Cancel anytime</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">✨ ALIGN</div>
+  <div class="footer-sub">Live in Flow — Your Personal Life OS</div>
+  <div class="footer-links">
+    <a href="#features">Features</a>
+    <a href="#pricing">Pricing</a>
+    <a href="align.html">Open App</a>
+    <a href="#">Privacy Policy</a>
+    <a href="#">Contact</a>
+  </div>
+  <div class="footer-copy">© 2026 ALIGN. Built with ❤️ for people who want to grow.</div>
+</footer>
+
+</body>
+</html>
