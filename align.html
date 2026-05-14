@@ -545,6 +545,24 @@ select.f-inp option{background:var(--bg2)}textarea.f-inp{resize:vertical;min-hei
       <div class="plan"><div class="plan-nm">Basic</div><div class="plan-pr">₹299</div><div class="plan-pd">/month</div><button class="btn-plan" onclick="pay(299,'ALIGN Basic')">Subscribe</button></div>
       <div class="plan feat"><div class="plan-tag">⭐ Best Value</div><div class="plan-nm" style="color:var(--purple3)">Pro</div><div class="plan-pr">₹599</div><div class="plan-pd">/month · AI included</div><button class="btn-plan" onclick="pay(599,'ALIGN Pro')">Subscribe</button></div>
     </div>
+    <div style="border-top:1px solid var(--border);margin-top:4px;padding-top:16px">
+      <div style="font-size:0.7rem;font-weight:700;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px;text-align:center">— OR PAY WITH PI —</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div style="background:rgba(106,48,147,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:14px;padding:16px;text-align:center">
+          <div style="font-size:0.68rem;font-weight:700;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">BASIC</div>
+          <div style="font-size:1.8rem;font-weight:800;letter-spacing:-0.03em">1 π</div>
+          <div style="font-size:0.72rem;color:var(--text3);margin-bottom:12px">/month</div>
+          <button onclick="payWithPi(1,'ALIGN Basic Pi')" style="width:100%;background:linear-gradient(135deg,#7B3FA0,#5A2D82);border:none;border-radius:10px;color:#fff;padding:9px;font-size:0.8rem;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;cursor:pointer">Pay with π</button>
+        </div>
+        <div style="background:rgba(106,48,147,0.15);border:1px solid var(--purple);border-radius:14px;padding:16px;text-align:center;position:relative">
+          <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#7B3FA0,#5A2D82);border-radius:20px;padding:3px 10px;font-size:0.62rem;font-weight:800;color:#fff;white-space:nowrap">⭐ Best</div>
+          <div style="font-size:0.68rem;font-weight:700;color:var(--purple3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">PRO</div>
+          <div style="font-size:1.8rem;font-weight:800;letter-spacing:-0.03em">2 π</div>
+          <div style="font-size:0.72rem;color:var(--text3);margin-bottom:12px">/month</div>
+          <button onclick="payWithPi(2,'ALIGN Pro Pi')" style="width:100%;background:linear-gradient(135deg,#7B3FA0,#5A2D82);border:none;border-radius:10px;color:#fff;padding:9px;font-size:0.8rem;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;cursor:pointer">Pay with π</button>
+        </div>
+      </div>
+    </div>
     <button onclick="logout()" style="background:transparent;border:none;color:var(--text3);font-size:0.75rem;cursor:pointer;text-decoration:underline">Sign out</button>
   </div>
 </div>
@@ -926,6 +944,82 @@ async function piLogin() {
 
 function onIncompletePayment(payment) {
   console.warn('Incomplete Pi payment:', payment);
+}
+
+// =================== PI PAYMENTS ===================
+const PI_API_KEY = 'f6jh6drcoajjgi7taehqomdtqjxnjsq50bqw4rlag4dgqbovkhcoqhebouzp0ksm';
+
+async function payWithPi(amount, planName) {
+  if (typeof window.Pi === 'undefined') {
+    toast('Pi Browser mein kholo ye app!', 'error');
+    return;
+  }
+  try {
+    toast('Opening Pi payment...');
+    const payment = await new Promise((resolve, reject) => {
+      Pi.createPayment({
+        amount: amount,
+        memo: planName + ' - Monthly Subscription',
+        metadata: { plan: planName, userId: U?.id || 'guest' }
+      }, {
+        onReadyForServerApproval: async (paymentId) => {
+          try {
+            await fetch('https://api.minepi.com/v2/payments/' + paymentId + '/approve', {
+              method: 'POST',
+              headers: {
+                'Authorization': 'Key ' + PI_API_KEY,
+                'Content-Type': 'application/json'
+              }
+            });
+          } catch(e) { console.error('Approve error:', e); }
+        },
+        onReadyForServerCompletion: async (paymentId, txid) => {
+          try {
+            await fetch('https://api.minepi.com/v2/payments/' + paymentId + '/complete', {
+              method: 'POST',
+              headers: {
+                'Authorization': 'Key ' + PI_API_KEY,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ txid })
+            });
+            resolve({ paymentId, txid });
+          } catch(e) { console.error('Complete error:', e); reject(e); }
+        },
+        onCancel: (paymentId) => {
+          toast('Payment cancelled', 'error');
+          reject(new Error('cancelled'));
+        },
+        onError: (error, payment) => {
+          toast('Payment error: ' + error, 'error');
+          reject(error);
+        }
+      });
+    });
+
+    // Payment successful - update Supabase subscription
+    if (payment && U) {
+      const paidUntil = new Date();
+      paidUntil.setMonth(paidUntil.getMonth() + 1);
+      await db.from('subscriptions').upsert({
+        user_id: U.id,
+        plan: planName,
+        status: 'paid',
+        paid_until: paidUntil.toISOString(),
+        razorpay_payment_id: 'pi_' + payment.txid
+      }, { onConflict: 'user_id' });
+
+      document.getElementById('pay-wall').style.display = 'none';
+      document.getElementById('trial-banner').style.display = 'none';
+      document.getElementById('sb-plan').textContent = 'π ' + planName;
+      toast('π Payment successful! Welcome to ' + planName + '!');
+    }
+  } catch(e) {
+    if (e.message !== 'cancelled') {
+      console.error('Pi payment error:', e);
+      toast('Payment failed. Try again.', 'error');
+    }
+  }
 }
 
 // Init Pi SDK on load
