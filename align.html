@@ -6,6 +6,7 @@
 <title>✨ ALIGN — Live in Flow</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -236,6 +237,13 @@ select.f-inp option{background:var(--bg2)}textarea.f-inp{resize:vertical;min-hei
         <button class="btn-primary" onclick="login()">Sign In →</button>
         <button class="btn-bio" id="bio-btn" onclick="biometricLogin()" style="display:none">👆 Use Fingerprint / Face ID</button>
         <button class="btn-ghost" onclick="showReg()">New here? Create free account</button>
+      </div>
+      <div style="text-align:center;margin-top:14px">
+        <div style="font-size:0.72rem;color:var(--text3);margin-bottom:10px;letter-spacing:0.06em;text-transform:uppercase;font-weight:700">— OR —</div>
+        <button id="pi-btn" onclick="piLogin()" style="width:100%;background:linear-gradient(135deg,#7B3FA0,#5A2D82);border:none;border-radius:12px;padding:13px;color:#fff;font-size:0.875rem;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s">
+          <span style="font-size:1.1rem">π</span> Sign in with Pi Network
+        </button>
+      </div>
       </div>
       <div id="reg-view" style="display:none">
         <div class="f-lbl">Email Address</div>
@@ -827,6 +835,103 @@ async function loadMoodHistory(){
 
 async function del(table,reload,id){await db.from(table).delete().eq('id',id);toast('🗑 Deleted');reload();}
 updateMood();
+
+
+// =================== PI NETWORK AUTH ===================
+let piSdkReady = false;
+
+async function initPiSDK() {
+  if (typeof window.Pi === 'undefined') return;
+  try {
+    await Pi.init({ version: '2.0', sandbox: false });
+    piSdkReady = true;
+    console.log('Pi SDK initialized');
+    // Auto-trigger Pi auth if in Pi Browser
+    if (isPiBrowser()) {
+      await piLogin();
+    }
+  } catch(e) {
+    console.log('Pi SDK init failed:', e);
+  }
+}
+
+function isPiBrowser() {
+  return navigator.userAgent.includes('PiBrowser') ||
+    typeof window.Pi !== 'undefined';
+}
+
+async function piLogin() {
+  if (!piSdkReady && typeof window.Pi !== 'undefined') {
+    try {
+      await Pi.init({ version: '2.0', sandbox: false });
+      piSdkReady = true;
+    } catch(e) {
+      toast('Pi SDK init failed', 'error');
+      return;
+    }
+  }
+  if (typeof window.Pi === 'undefined') {
+    toast('Pi Browser mein kholo ye app!', 'error');
+    return;
+  }
+  try {
+    const btn = document.getElementById('pi-btn');
+    if (btn) btn.textContent = '⏳ Authenticating...';
+
+    const auth = await Pi.authenticate(['username'], onIncompletePayment);
+    
+    // Validate token via Pi API
+    const res = await fetch('https://api.minepi.com/v2/me', {
+      headers: { 'Authorization': 'Bearer ' + auth.accessToken }
+    });
+
+    if (!res.ok) throw new Error('Token validation failed');
+    
+    const piUser = await res.json();
+    console.log('Pi user:', piUser);
+
+    // Create/login Supabase account with Pi identity
+    const email = piUser.username + '@pi.align.app';
+    const pass = 'pi_' + piUser.uid.substring(0, 20);
+
+    // Try login first
+    let { data, error } = await db.auth.signInWithPassword({ email, password: pass });
+
+    if (error) {
+      // Create new account
+      const reg = await db.auth.signUp({ email, password: pass });
+      if (reg.error) throw reg.error;
+      data = reg.data;
+    }
+
+    U = data.user || data.session?.user;
+    if (!U) {
+      const { data: { session } } = await db.auth.getSession();
+      U = session?.user;
+    }
+
+    if (U) {
+      document.getElementById('auth-screen').style.display = 'none';
+      startApp();
+      toast('π Welcome, ' + piUser.username + '!');
+    }
+  } catch(e) {
+    console.error('Pi login error:', e);
+    const btn = document.getElementById('pi-btn');
+    if (btn) { btn.innerHTML = '<span style="font-size:1.1rem">π</span> Sign in with Pi Network'; }
+    toast('Pi login failed: ' + e.message, 'error');
+  }
+}
+
+function onIncompletePayment(payment) {
+  console.warn('Incomplete Pi payment:', payment);
+}
+
+// Init Pi SDK on load
+window.addEventListener('load', () => {
+  setTimeout(initPiSDK, 1000);
+}, false);
+
 </script>
 </body>
 </html>
