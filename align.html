@@ -879,180 +879,48 @@ async function loadMoodHistory(){
 }
 
 async function del(table,reload,id){await db.from(table).delete().eq('id',id);toast('🗑 Deleted');reload();}
+
+// =================== ADMIN ===================
+let adminData={users:[],subs:[]};
+
+async function loadAdmin(){
+  document.getElementById('a-total').textContent='...';
+  try{
+    const[subsRes,usersRes]=await Promise.all([
+      db.rpc('get_all_subscriptions'),
+      db.rpc('get_all_users')
+    ]);
+    adminData.subs=subsRes.data||[];
+    adminData.users=usersRes.data||[];
+    console.log('Admin - Subs:',adminData.subs.length,'Users:',adminData.users.length);
+    const paid=adminData.subs.filter(s=>s.status==='paid'&&s.paid_until&&new Date(s.paid_until)>new Date());
+    const rev=paid.reduce((s,p)=>s+(p.plan?.includes('Pro')?599:299),0);
+    const total=Math.max(adminData.users.length,adminData.subs.length);
+    document.getElementById('a-total').textContent=total;
+    document.getElementById('a-paid').textContent=paid.length;
+    document.getElementById('a-trial').textContent=adminData.subs.filter(s=>s.status!=='paid').length;
+    document.getElementById('a-rev').textContent='₹'+rev.toLocaleString('en-IN');
+    renderAdminTable();
+  }catch(e){console.error('loadAdmin:',e);document.getElementById('a-total').textContent='Error';}
+}
+
+function renderAdminTable(filter=''){
+  const el=document.getElementById('a-table');
+  const src=adminData.users.length>0?adminData.users:adminData.subs.map(s=>({id:s.user_id,email:'User...'+s.user_id.substring(0,6),created_at:s.created_at}));
+  const list=filter?src.filter(u=>u.email?.toLowerCase().includes(filter)):src;
+  if(!list.length){el.innerHTML='<p style="color:var(--text3);text-align:center;padding:20px">No users yet</p>';return;}
+  const rows=list.map(u=>{
+    const sub=adminData.subs.find(s=>s.user_id===u.id);
+    const isPaid=sub?.status==='paid'&&new Date(sub?.paid_until)>new Date();
+    const days=sub?.trial_end?Math.ceil((new Date(sub.trial_end)-new Date())/(864e5)):7;
+    const badge=isPaid?'<span class="badge b-g">Paid</span>':days>0?'<span class="badge b-o">Trial '+days+'d</span>':'<span class="badge b-r">Expired</span>';
+    const d=u.created_at?new Date(u.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'}):'-';
+    return '<tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 8px;font-size:0.8rem;font-weight:600">'+u.email+'</td><td style="padding:10px 8px">'+badge+'</td><td style="padding:10px 8px;font-size:0.75rem;color:var(--text3)">'+d+'</td></tr>';
+  }).join('');
+  el.innerHTML='<table style="width:100%;border-collapse:collapse"><thead><tr><th style="padding:10px 8px;text-align:left;font-size:0.68rem;color:var(--text3);text-transform:uppercase">User</th><th style="padding:10px 8px;text-align:left;font-size:0.68rem;color:var(--text3);text-transform:uppercase">Plan</th><th style="padding:10px 8px;text-align:left;font-size:0.68rem;color:var(--text3);text-transform:uppercase">Joined</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+function filterAdminTable(){renderAdminTable(document.getElementById('a-search').value.toLowerCase());}
+
 updateMood();
-
-
-// =================== PI NETWORK AUTH ===================
-let piSdkReady = false;
-
-async function initPiSDK() {
-  if (typeof window.Pi === 'undefined') return;
-  try {
-    await Pi.init({ version: '2.0', sandbox: false });
-    piSdkReady = true;
-    console.log('Pi SDK initialized');
-    // Auto-trigger Pi auth if in Pi Browser
-    if (isPiBrowser()) {
-      await piLogin();
-    }
-  } catch(e) {
-    console.log('Pi SDK init failed:', e);
-  }
-}
-
-function isPiBrowser() {
-  return navigator.userAgent.includes('PiBrowser') ||
-    navigator.userAgent.includes('Pi Network');
-}
-
-async function piLogin() {
-  if (!piSdkReady && typeof window.Pi !== 'undefined') {
-    try {
-      await Pi.init({ version: '2.0', sandbox: false });
-      piSdkReady = true;
-    } catch(e) {
-      toast('Pi SDK init failed', 'error');
-      return;
-    }
-  }
-  if (typeof window.Pi === 'undefined') {
-    toast('Pi Browser mein kholo ye app!', 'error');
-    return;
-  }
-  try {
-    const btn = document.getElementById('pi-btn');
-    if (btn) btn.innerHTML = '⏳ Authenticating...';
-
-    const auth = await Pi.authenticate(['username'], onIncompletePayment);
-    
-    // Validate token via Pi API
-    const res = await fetch('https://api.minepi.com/v2/me', {
-      headers: { 'Authorization': 'Bearer ' + auth.accessToken }
-    });
-
-    if (!res.ok) throw new Error('Token validation failed');
-    
-    const piUser = await res.json();
-    console.log('Pi user:', piUser);
-
-    // Create/login Supabase account with Pi identity
-    const email = piUser.username + '@pi.align.app';
-    const pass = 'pi_' + piUser.uid.substring(0, 20);
-
-    // Try login first
-    let { data, error } = await db.auth.signInWithPassword({ email, password: pass });
-
-    if (error) {
-      // Create new account
-      const reg = await db.auth.signUp({ email, password: pass });
-      if (reg.error) throw reg.error;
-      data = reg.data;
-    }
-
-    U = data.user || data.session?.user;
-    if (!U) {
-      const { data: { session } } = await db.auth.getSession();
-      U = session?.user;
-    }
-
-    if (U) {
-      document.getElementById('auth-screen').style.display = 'none';
-      startApp();
-      toast('π Welcome, ' + piUser.username + '!');
-    }
-  } catch(e) {
-    console.error('Pi login error:', e);
-    const btn = document.getElementById('pi-btn');
-    if (btn) { btn.innerHTML = '<span style="font-size:1.1rem">π</span> Sign in with Pi Network'; }
-    toast('Pi login failed: ' + e.message, 'error');
-  }
-}
-
-function onIncompletePayment(payment) {
-  console.warn('Incomplete Pi payment:', payment);
-}
-
-// =================== PI PAYMENTS ===================
-const PI_API_KEY = 'f6jh6drcoajjgi7taehqomdtqjxnjsq50bqw4rlag4dgqbovkhcoqhebouzp0ksm';
-
-async function payWithPi(amount, planName) {
-  if (typeof window.Pi === 'undefined') {
-    toast('Pi Browser mein kholo ye app!', 'error');
-    return;
-  }
-  try {
-    toast('Opening Pi payment...');
-    const payment = await new Promise((resolve, reject) => {
-      Pi.createPayment({
-        amount: amount,
-        memo: planName + ' - Monthly Subscription',
-        metadata: { plan: planName, userId: U?.id || 'guest' }
-      }, {
-        onReadyForServerApproval: async (paymentId) => {
-          try {
-            await fetch('https://api.minepi.com/v2/payments/' + paymentId + '/approve', {
-              method: 'POST',
-              headers: {
-                'Authorization': 'Key ' + PI_API_KEY,
-                'Content-Type': 'application/json'
-              }
-            });
-          } catch(e) { console.error('Approve error:', e); }
-        },
-        onReadyForServerCompletion: async (paymentId, txid) => {
-          try {
-            await fetch('https://api.minepi.com/v2/payments/' + paymentId + '/complete', {
-              method: 'POST',
-              headers: {
-                'Authorization': 'Key ' + PI_API_KEY,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ txid })
-            });
-            resolve({ paymentId, txid });
-          } catch(e) { console.error('Complete error:', e); reject(e); }
-        },
-        onCancel: (paymentId) => {
-          toast('Payment cancelled', 'error');
-          reject(new Error('cancelled'));
-        },
-        onError: (error, payment) => {
-          toast('Payment error: ' + error, 'error');
-          reject(error);
-        }
-      });
-    });
-
-    // Payment successful - update Supabase subscription
-    if (payment && U) {
-      const paidUntil = new Date();
-      paidUntil.setMonth(paidUntil.getMonth() + 1);
-      await db.from('subscriptions').upsert({
-        user_id: U.id,
-        plan: planName,
-        status: 'paid',
-        paid_until: paidUntil.toISOString(),
-        razorpay_payment_id: 'pi_' + payment.txid
-      }, { onConflict: 'user_id' });
-
-      document.getElementById('pay-wall').style.display = 'none';
-      document.getElementById('trial-banner').style.display = 'none';
-      document.getElementById('sb-plan').textContent = 'π ' + planName;
-      toast('π Payment successful! Welcome to ' + planName + '!');
-    }
-  } catch(e) {
-    if (e.message !== 'cancelled') {
-      console.error('Pi payment error:', e);
-      toast('Payment failed. Try again.', 'error');
-    }
-  }
-}
-
-// Init Pi SDK on load
-window.addEventListener('load', () => {
-  setTimeout(initPiSDK, 1000);
-}, false);
-
 </script>
-</body>
-</html>
