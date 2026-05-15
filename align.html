@@ -12,7 +12,6 @@
 <title>✨ ALIGN — Live in Flow</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-<script src="https://sdk.minepi.com/pi-sdk.js" async defer onerror="console.log('Pi SDK not available')"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -629,11 +628,16 @@ window.addEventListener('load',async()=>{
   if(localStorage.getItem('bio_cred_id')&&window.PublicKeyCredential)document.getElementById('bio-btn').style.display='flex';
   // Show Pi login only in Pi Browser
   // Show Pi login only in Pi Browser (check UA + wait for SDK)
-  // Show Pi button ONLY in Pi Browser via user agent
-  const uaPi=navigator.userAgent.toLowerCase();
-  if(uaPi.includes('pibrowser')||uaPi.includes('minepi')){
+  // Show Pi button ONLY when Pi SDK is available (built-in to Pi Browser)
+  if(typeof window.Pi!=='undefined'){
     document.getElementById('pi-login-section').style.display='block';
   }
+  // Also check after SDK loads
+  setTimeout(()=>{
+    if(typeof window.Pi!=='undefined'){
+      document.getElementById('pi-login-section').style.display='block';
+    }
+  },1500);
   // Also check after SDK loads
   setTimeout(()=>{
     if(typeof window.Pi !== 'undefined'){
