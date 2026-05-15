@@ -611,7 +611,13 @@ const SB_URL='https://ejqzutuqbpjmlwvawxqv.supabase.co';
 const SB_KEY='sb_publishable_Y2MjXWcb8Un2ShTfIRhUmQ_2A2obWp8';
 const RZP='rzp_test_SpBOcSrRqOvFHP';
 const{createClient}=supabase;
-const db=createClient(SB_URL,SB_KEY);
+const db=createClient(SB_URL,SB_KEY,{
+  auth:{
+    persistSession:true,
+    autoRefreshToken:true,
+    detectSessionInUrl:true
+  }
+});
 let U=null,tab='dashboard';
 
 const AFFS=["Main powerful hoon. Main successful hoon. 🔥","Har din mujhe naye opportunities milti hain. ✨","Mera future bright aur abundant hai. 💫","Main apne har goal achieve karta hoon. 🎯","Universe hamesha mera saath deta hai. 🌌","Main healthy, wealthy aur deeply happy hoon. 💚","Meri frequency high hai — magic hoti rehti hai. ⚡","The Frequency Reset mujhe aligned rakhta hai. 🧘","Paise meri taraf naturally attract hote hain. 💰","Mera kaam duniya mein impact kar raha hai. 🌍","Main fearless hoon. Main consistent hoon. 🦁","Aaj ka din mera best day hai. Abhi. Is pal. 🌅","Meri mehnat rang la rahi hai — daily. 📈","Main voh ban raha hoon jo mujhe banna tha. 🚀","Gratitude meri superpower hai. Thank you Universe. 🙏"];
@@ -622,9 +628,24 @@ const TABS={dashboard:{t:'Dashboard',s:'Your personal command center',btn:false}
 window.addEventListener('load',async()=>{
   if(localStorage.getItem('bio_cred_id')&&window.PublicKeyCredential)document.getElementById('bio-btn').style.display='flex';
   // Show Pi login only in Pi Browser
-  // Show Pi login only in Pi Browser
-  const uaPi = navigator.userAgent.includes('PiBrowser') || navigator.userAgent.includes('Pi Network');
-  if(uaPi) document.getElementById('pi-login-section').style.display='block';
+  // Show Pi login only in Pi Browser (check UA + wait for SDK)
+  // Show Pi button in Pi Browser
+  const uaPi = navigator.userAgent.toLowerCase();
+  if(uaPi.includes('pibrowser')||uaPi.includes('pi network')||uaPi.includes('minepi')){
+    document.getElementById('pi-login-section').style.display='block';
+  }
+  // Also check after 2 seconds when Pi SDK may have loaded
+  setTimeout(()=>{
+    if(typeof window.Pi!=='undefined'&&window.Pi?.authenticate){
+      document.getElementById('pi-login-section').style.display='block';
+    }
+  },2000);
+  // Also check after SDK loads
+  setTimeout(()=>{
+    if(typeof window.Pi !== 'undefined'){
+      document.getElementById('pi-login-section').style.display='block';
+    }
+  },2000);
   document.getElementById('e-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('h-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
   const{data:{session}}=await db.auth.getSession();
