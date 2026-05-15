@@ -622,7 +622,9 @@ const TABS={dashboard:{t:'Dashboard',s:'Your personal command center',btn:false}
 window.addEventListener('load',async()=>{
   if(localStorage.getItem('bio_cred_id')&&window.PublicKeyCredential)document.getElementById('bio-btn').style.display='flex';
   // Show Pi login only in Pi Browser
-  if(isPiBrowser())document.getElementById('pi-login-section').style.display='block';
+  // Show Pi login only in Pi Browser
+  const uaPi = navigator.userAgent.includes('PiBrowser') || navigator.userAgent.includes('Pi Network');
+  if(uaPi) document.getElementById('pi-login-section').style.display='block';
   document.getElementById('e-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('h-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
   const{data:{session}}=await db.auth.getSession();
