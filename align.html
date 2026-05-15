@@ -629,17 +629,11 @@ window.addEventListener('load',async()=>{
   if(localStorage.getItem('bio_cred_id')&&window.PublicKeyCredential)document.getElementById('bio-btn').style.display='flex';
   // Show Pi login only in Pi Browser
   // Show Pi login only in Pi Browser (check UA + wait for SDK)
-  // Show Pi button in Pi Browser
-  const uaPi = navigator.userAgent.toLowerCase();
-  if(uaPi.includes('pibrowser')||uaPi.includes('pi network')||uaPi.includes('minepi')){
+  // Show Pi button ONLY in Pi Browser via user agent
+  const uaPi=navigator.userAgent.toLowerCase();
+  if(uaPi.includes('pibrowser')||uaPi.includes('minepi')){
     document.getElementById('pi-login-section').style.display='block';
   }
-  // Also check after 2 seconds when Pi SDK may have loaded
-  setTimeout(()=>{
-    if(typeof window.Pi!=='undefined'&&window.Pi?.authenticate){
-      document.getElementById('pi-login-section').style.display='block';
-    }
-  },2000);
   // Also check after SDK loads
   setTimeout(()=>{
     if(typeof window.Pi !== 'undefined'){
