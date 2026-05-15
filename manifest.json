@@ -1,0 +1,26 @@
+{
+  "name": "ALIGN — Live in Flow",
+  "short_name": "ALIGN",
+  "description": "Your personal life OS — tasks, expenses, habits, savings, goals & mood tracker.",
+  "start_url": "/align-app/align.html",
+  "scope": "/align-app/",
+  "display": "standalone",
+  "background_color": "#080818",
+  "theme_color": "#8b5cf6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192x192/8b5cf6/ffffff?text=A",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://via.placeholder.com/512x512/8b5cf6/ffffff?text=A",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "lifestyle", "finance"]
+}
