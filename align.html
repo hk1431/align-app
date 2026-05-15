@@ -300,6 +300,10 @@ select.f-inp option{background:var(--bg2)}textarea.f-inp{resize:vertical;min-hei
         <button class="nav-btn" onclick="go('notes')" data-tab="notes"><span class="nav-ic">📓</span>Notes</button>
         <button class="nav-btn" onclick="go('habits')" data-tab="habits"><span class="nav-ic">🌿</span>Habits</button>
         <button class="nav-btn" onclick="go('mood')" data-tab="mood"><span class="nav-ic">🔥</span>Mood</button>
+        <div id="admin-nav-item" style="display:none">
+          <div class="sb-sec">Admin</div>
+          <button class="nav-btn" onclick="go('admin')" data-tab="admin"><span class="nav-ic">⚙️</span>Admin Panel</button>
+        </div>
       </div>
       <div class="sb-foot">
         <button class="btn-out" onclick="logout()">🚪 Sign Out</button>
@@ -489,6 +493,21 @@ select.f-inp option{background:var(--bg2)}textarea.f-inp{resize:vertical;min-hei
           <div id="list-habits"></div>
         </div>
 
+        <!-- ADMIN -->
+        <div class="tab-pane" id="pane-admin">
+          <div class="stats" id="a-stats">
+            <div class="sc p"><div class="sc-icon">👥</div><div class="sc-num" id="a-total">–</div><div class="sc-lbl">Total Users</div></div>
+            <div class="sc g"><div class="sc-icon">💎</div><div class="sc-num" id="a-paid">–</div><div class="sc-lbl">Paid Users</div></div>
+            <div class="sc o"><div class="sc-icon">⏳</div><div class="sc-num" id="a-trial">–</div><div class="sc-lbl">On Trial</div></div>
+            <div class="sc b"><div class="sc-icon">💰</div><div class="sc-num" id="a-rev">–</div><div class="sc-lbl">Est. Revenue</div></div>
+          </div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-hd">👥 All Users</div>
+            <input class="f-inp" id="a-search" placeholder="🔍 Search email..." oninput="filterAdminTable()" style="margin-bottom:12px">
+            <div id="a-table" style="overflow-x:auto"></div>
+          </div>
+        </div>
+
         <!-- MOOD -->
         <div class="tab-pane" id="pane-mood">
           <div class="g2">
@@ -528,6 +547,7 @@ select.f-inp option{background:var(--bg2)}textarea.f-inp{resize:vertical;min-hei
           <button class="bb" onclick="go('notes')" data-tab="notes"><span class="bb-ic">📓</span>Notes</button>
           <button class="bb" onclick="go('habits')" data-tab="habits"><span class="bb-ic">🌿</span>Habits</button>
           <button class="bb" onclick="go('mood')" data-tab="mood"><span class="bb-ic">🔥</span>Mood</button>
+          <button class="bb" id="admin-bnav" onclick="go('admin')" data-tab="admin" style="display:none"><span class="bb-ic">⚙️</span>Admin</button>
           <button class="bb" onclick="logout()" style="color:var(--red)"><span class="bb-ic">🚪</span>Logout</button>
         </div>
       </nav>
@@ -590,7 +610,8 @@ let U=null,tab='dashboard';
 
 const AFFS=["Main powerful hoon. Main successful hoon. 🔥","Har din mujhe naye opportunities milti hain. ✨","Mera future bright aur abundant hai. 💫","Main apne har goal achieve karta hoon. 🎯","Universe hamesha mera saath deta hai. 🌌","Main healthy, wealthy aur deeply happy hoon. 💚","Meri frequency high hai — magic hoti rehti hai. ⚡","The Frequency Reset mujhe aligned rakhta hai. 🧘","Paise meri taraf naturally attract hote hain. 💰","Mera kaam duniya mein impact kar raha hai. 🌍","Main fearless hoon. Main consistent hoon. 🦁","Aaj ka din mera best day hai. Abhi. Is pal. 🌅","Meri mehnat rang la rahi hai — daily. 📈","Main voh ban raha hoon jo mujhe banna tha. 🚀","Gratitude meri superpower hai. Thank you Universe. 🙏"];
 
-const TABS={dashboard:{t:'Dashboard',s:'Your personal command center',btn:false},todos:{t:'To-Do List',s:'Manage tasks & priorities',btn:'＋ Add Task',f:'form-todos'},expenses:{t:'Expenses',s:'Track every rupee you spend',btn:'＋ Add Expense',f:'form-expenses'},vault:{t:'Password Vault',s:'Store your login hints safely',btn:'＋ Add Entry',f:'form-vault'},savings:{t:'Savings & Investments',s:'Build your wealth portfolio',btn:'＋ Add',f:'form-savings'},progress:{t:'Progress Goals',s:'Track milestones & achievements',btn:'＋ Add Goal',f:'form-progress'},projects:{t:'Projects',s:'Manage your startup portfolio',btn:'＋ New Project',f:'form-projects'},notes:{t:'Notes & Journal',s:'Capture ideas & thoughts',btn:'＋ New Note',f:'form-notes'},habits:{t:'Habit Tracker',s:'Build powerful daily routines',btn:'＋ Add Habit',f:'form-habits'},mood:{t:'Mood & Motivator',s:'Log your energy, get inspired',btn:false}};
+const TABS={dashboard:{t:'Dashboard',s:'Your personal command center',btn:false},todos:{t:'To-Do List',s:'Manage tasks & priorities',btn:'＋ Add Task',f:'form-todos'},expenses:{t:'Expenses',s:'Track every rupee you spend',btn:'＋ Add Expense',f:'form-expenses'},vault:{t:'Password Vault',s:'Store your login hints safely',btn:'＋ Add Entry',f:'form-vault'},savings:{t:'Savings & Investments',s:'Build your wealth portfolio',btn:'＋ Add',f:'form-savings'},progress:{t:'Progress Goals',s:'Track milestones & achievements',btn:'＋ Add Goal',f:'form-progress'},projects:{t:'Projects',s:'Manage your startup portfolio',btn:'＋ New Project',f:'form-projects'},notes:{t:'Notes & Journal',s:'Capture ideas & thoughts',btn:'＋ New Note',f:'form-notes'},habits:{t:'Habit Tracker',s:'Build powerful daily routines',btn:'＋ Add Habit',f:'form-habits'},mood:{t:'Mood & Motivator',s:'Log your energy, get inspired',btn:false},
+  admin:{t:'Admin Panel',s:'Users, revenue & subscription stats',btn:false}};
 
 window.addEventListener('load',async()=>{
   if(localStorage.getItem('bio_cred_id')&&window.PublicKeyCredential)document.getElementById('bio-btn').style.display='flex';
@@ -618,6 +639,11 @@ function startApp(){
   document.getElementById('sb-av').textContent=av;
   document.getElementById('sb-name').textContent=nm;
   checkSub();loadDash();newAff();
+  // Show admin panel if admin email
+  if(U.email==='sharmaa.deepak82@gmail.com'){
+    document.getElementById('admin-nav-item').style.display='block';
+    document.getElementById('admin-bnav').style.display='flex';
+  }
 }
 
 async function login(){
@@ -684,7 +710,7 @@ function go(t){
   document.getElementById('hdr-sub').textContent=cfg.s;
   const btn=document.getElementById('add-btn');
   if(cfg.btn){btn.style.display='flex';btn.textContent=cfg.btn;}else btn.style.display='none';
-  ({dashboard:loadDash,todos:loadTodos,expenses:loadExpenses,vault:loadVault,savings:loadSavings,progress:loadProgress,projects:loadProjects,notes:loadNotes,habits:loadHabits,mood:loadMood})[t]?.();
+  ({dashboard:loadDash,todos:loadTodos,expenses:loadExpenses,vault:loadVault,savings:loadSavings,progress:loadProgress,projects:loadProjects,notes:loadNotes,habits:loadHabits,mood:loadMood,admin:loadAdmin})[t]?.();
 }
 function triggerAdd(){const f=TABS[tab]?.f;if(f)toggleForm(f);}
 function toggleForm(id){const el=document.getElementById(id);el.classList.toggle('open');if(el.classList.contains('open'))el.scrollIntoView({behavior:'smooth',block:'start'});}
