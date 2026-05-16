@@ -35,7 +35,7 @@
 
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;font-family:'Plus Jakarta Sans',sans-serif;font-size:15px}
-body{background:var(--bg);color:var(--text);line-height:1.5;overflow:hidden}
+body{background:var(--bg);color:var(--text);line-height:1.5;overflow:hidden;overscroll-behavior:none;}
 
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -270,7 +270,7 @@ textarea.f-inp{resize:vertical;min-height:80px}
 .btn-green:hover{transform:translateY(-2px);box-shadow:0 6px 26px rgba(34,197,94,0.42)}
 .btn-green:active{transform:scale(0.97)}
 
-.scroll-area{flex:1;overflow-y:auto;padding:20px 24px;-webkit-overflow-scrolling:touch}
+.scroll-area{flex:1;overflow-y:auto;padding:20px 24px;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;}
 .tab-pane{display:none;animation:fadeUp 0.25s ease}
 .tab-pane.active{display:block}
 
@@ -541,7 +541,7 @@ textarea.f-inp{resize:vertical;min-height:80px}
   border-top:1px solid rgba(255,255,255,0.06);flex-shrink:0;position:sticky;bottom:0;z-index:100;
   box-shadow:0 -8px 30px rgba(0,0,0,0.45);
 }
-.bnav-inner{display:flex;overflow-x:auto;padding:6px 4px;scrollbar-width:none}
+.bnav-inner{display:flex;overflow-x:auto;padding:6px 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;overscroll-behavior-x:contain;}
 .bnav-inner::-webkit-scrollbar{display:none}
 .bb{
   display:flex;flex-direction:column;align-items:center;gap:3px;
@@ -1055,6 +1055,7 @@ function startApp(){
   document.getElementById('sb-name').textContent=nm;
   checkSub();loadDash();newAff();
   updateXP();
+  setupNotifications();
   if(U.email==='sharmaa.deepak82@gmail.com'){
     document.getElementById('admin-nav-item').style.display='block';
     document.getElementById('admin-bnav').style.display='flex';
@@ -1358,6 +1359,86 @@ async function updateXP(){
     const sbAv=document.getElementById('sb-av');
     if(sbAv)sbAv.setAttribute('data-lvl',lvl);
   }catch(e){console.log('XP:',e);}
+}
+
+// =================== NOTIFICATIONS ===================
+async function setupNotifications(){
+  if(!('Notification' in window))return;
+  if(Notification.permission==='denied')return;
+  if(Notification.permission==='default'){
+    setTimeout(async()=>{
+      const p=await Notification.requestPermission();
+      if(p==='granted'){toast('🔔 Notifications ON!');checkAndNotify();}
+    },4000);
+  } else if(Notification.permission==='granted'){
+    checkAndNotify();
+  }
+}
+
+async function checkAndNotify(){
+  try{
+    const today=new Date().toISOString().split('T')[0];
+    const[{data:todos},{data:hb},{data:hl},{data:ml}]=await Promise.all([
+      db.from('todos').select('id,title').eq('user_id',U.id).eq('completed',false),
+      db.from('habits').select('id').eq('user_id',U.id),
+      db.from('habit_logs').select('id').eq('user_id',U.id).eq('date',today),
+      db.from('mood_logs').select('id').eq('user_id',U.id).eq('date',today)
+    ]);
+    const pending=todos?.length||0;
+    const pendingHabits=Math.max(0,(hb?.length||0)-(hl?.length||0));
+
+    // Pending tasks → 12 sec baad notify
+    if(pending>0){
+      setTimeout(()=>{
+        showNotif('✅ Tasks Pending — ALIGN',
+          `${pending} task${pending>1?'s':''} abhi bhi pending hai. Chal dete hain! 💪`);
+      },12000);
+    }
+
+    // Habits pending → 20 sec baad notify
+    if(pendingHabits>0){
+      setTimeout(()=>{
+        showNotif('🌿 Habits Pending — ALIGN',
+          `${pendingHabits} habit${pendingHabits>1?'s':''} aaj complete nahi ki. Abhi karo! 🔥`);
+      },20000);
+    }
+
+    // Evening 8 PM reminder
+    scheduleAt(20,0,async()=>{
+      const[{data:t2},{data:ml2}]=await Promise.all([
+        db.from('todos').select('id').eq('user_id',U.id).eq('completed',false),
+        db.from('mood_logs').select('id').eq('user_id',U.id).eq('date',new Date().toISOString().split('T')[0])
+      ]);
+      let msg='';
+      if(t2?.length)msg+=`${t2.length} tasks pending. `;
+      if(!ml2?.length)msg+='Aaj ka mood log nahi kiya! ';
+      showNotif('🌙 Shaam ki yaad — ALIGN',msg||'Kal bhi apni game strong rakhna. 🔥');
+    });
+
+    // Morning 9 AM reminder
+    scheduleAt(9,0,()=>{
+      showNotif('☀️ Good Morning — ALIGN','Naya din, nayi energy! Apne tasks aur habits check karo. 🚀');
+    });
+
+  }catch(e){console.log('notify:',e);}
+}
+
+function showNotif(title,body){
+  if(Notification.permission!=='granted')return;
+  try{
+    new Notification(title,{
+      body,icon:'./icon-192.png',badge:'./icon-192.png',
+      tag:'align-notif',renotify:true,vibrate:[200,100,200]
+    });
+  }catch(e){}
+}
+
+function scheduleAt(hour,min,fn){
+  const now=new Date(),target=new Date();
+  target.setHours(hour,min,0,0);
+  if(target<=now)return;
+  const delay=target-now;
+  if(delay<18*60*60*1000)setTimeout(fn,delay);
 }
 
 updateMood();
